@@ -102,6 +102,44 @@ func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func UpdateAthlete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var athlete models.Athlete
+	err := json.NewDecoder(r.Body).Decode(&athlete)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	sqlStatement := `UPDATE athlete SET gym_id = $1, first_name = $2, last_name = $3, username = $4, birth_date = $5, wins = $6, losses = $7 WHERE athlete_id = $8`
+	_, err = dbconn.Queryx(sqlStatement, athlete.GymId, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Wins, athlete.Losses, athlete.AthleteId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Athlete updated successfully")
+
+}
+
+func DeleteAthlete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	id := vars["athlete_id"]
+
+	sqlStatement := `DELETE FROM athlete WHERE athlete_id = $1`
+	_, err := dbconn.Queryx(sqlStatement, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Athlete deleted successfully")
+
+}
+
 func SetDB(db *sqlx.DB) {
 	dbconn = db
 }
