@@ -154,3 +154,65 @@ func CompleteBout(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(&id)
 }
+
+func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var bouts = models.GetBouts()
+	vars := mux.Vars(r)
+	id := vars["athlete_id"]
+	sqlStmt := `SELECT * FROM bout where accepted = false and acceptor_id = $1`
+	rows, err := dbconn.Queryx(sqlStmt, id)
+
+	if err == nil {
+		var tempBout = models.GetBout()
+
+		for rows.Next() {
+			err = rows.StructScan(&tempBout)
+			bouts = append(bouts, tempBout)
+		}
+
+		switch err {
+		case sql.ErrNoRows:
+			{
+				log.Println("no rows returns.")
+				http.Error(w, err.Error(), 204)
+			}
+		case nil:
+			json.NewEncoder(w).Encode(&bouts)
+		default:
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	}
+}
+
+func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var bouts = models.GetBouts()
+	vars := mux.Vars(r)
+	id := vars["athlete_id"]
+	sqlStmt := `SELECT * FROM bout where completed = false and (challenger_id = $1 or acceptor_id = $1)`
+	rows, err := dbconn.Queryx(sqlStmt, id)
+
+	if err == nil {
+		var tempBout = models.GetBout()
+
+		for rows.Next() {
+			err = rows.StructScan(&tempBout)
+			bouts = append(bouts, tempBout)
+		}
+
+		switch err {
+		case sql.ErrNoRows:
+			{
+				log.Println("no rows returns.")
+				http.Error(w, err.Error(), 204)
+			}
+		case nil:
+			json.NewEncoder(w).Encode(&bouts)
+		default:
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	}
+}

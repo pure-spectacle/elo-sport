@@ -54,13 +54,6 @@ CREATE TABLE bout (
 	CONSTRAINT FK_challenger_id FOREIGN KEY (challenger_id) REFERENCES athlete(athlete_id),
     CONSTRAINT FK_acceptor_id FOREIGN KEY (acceptor_id) REFERENCES athlete(athlete_id));
 
-CREATE TABLE outcome (
-	outcome_id serial PRIMARY KEY,
-    winner_id int,
-    loser_id int,
-    disputed boolean,
-	CONSTRAINT FK_winner_id FOREIGN KEY (winner_id) REFERENCES athlete(athlete_id),
-    CONSTRAINT FK_loser_id FOREIGN KEY (loser_id) REFERENCES athlete(athlete_id));
 
 CREATE TABLE athlete_style (
 	athlete_id int,
