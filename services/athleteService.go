@@ -81,17 +81,9 @@ func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var maxAthleteId int
-	err = dbconn.QueryRowx("SELECT MAX(athlete_id) FROM athlete").Scan(&maxAthleteId)
-	if err != nil && err != sql.ErrNoRows {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	athlete.AthleteId = maxAthleteId + 1
-
-	sqlStatement := `INSERT INTO athlete (athlete_id, gym_id, first_name, last_name, username, birth_date, wins, losses)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-	_, err = dbconn.Queryx(sqlStatement, athlete.AthleteId, athlete.GymId, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Wins, athlete.Losses)
+	sqlStatement := `INSERT INTO athlete (gym_id, first_name, last_name, username, birth_date, wins, losses)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	_, err = dbconn.Queryx(sqlStatement, athlete.GymId, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Wins, athlete.Losses)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

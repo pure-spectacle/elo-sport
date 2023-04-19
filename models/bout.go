@@ -5,6 +5,7 @@ type Bout struct {
 	ChallengerId    int `json:"challengerId" db:"challenger_id"`
 	AcceptorId 		int `json:"acceptorId" db:"acceptor_id"`
 	Accepted  		bool `json:"accepted" db:"accepted"`
+	Completed 		bool `json:"completed" db:"completed"`
 	Points  		int `json:"points" db:"points"`
 }
 

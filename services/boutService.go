@@ -3,7 +3,6 @@ package services
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"ronin/models"
@@ -80,9 +79,8 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var bout = models.GetBout()
 	_ = json.NewDecoder(r.Body).Decode(&bout)
-	var nextBoutId int = getNextBoudId()
-	sqlStmt := `INSERT INTO bout (bout_id, challenger_id, acceptor_id, accepted, points) VALUES ($1, $2, $3, $4, $5)`
-	_, err := dbconn.Exec(sqlStmt, nextBoutId, bout.ChallengerId, bout.AcceptorId, bout.Accepted, bout.Points)
+	sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, accepted, completed, points) VALUES ($1, $2, $3, $4, $5)`
+	_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.Accepted, bout.Completed, bout.Points)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
@@ -118,15 +116,41 @@ func DeleteBout(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&id)
 }
 
-func getNextBoudId() int {
-	sqlStmt := `SELECT MAX(bout_id) FROM bout`
-	var maxId int
-	err := dbconn.Get(&maxId, sqlStmt)
+func AcceptBout(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	id := vars["bout_id"]
+	sqlStmt := `UPDATE bout SET accepted = true WHERE bout_id = $1`
+	_, err := dbconn.Exec(sqlStmt, id)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, err.Error(), 400)
+		return
 	}
-	if maxId == 0 {
-		return 1
+	json.NewEncoder(w).Encode(&id)
+}
+
+func DeclineBout(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	id := vars["bout_id"]
+	sqlStmt := `UPDATE bout SET accepted = false WHERE bout_id = $1`
+	_, err := dbconn.Exec(sqlStmt, id)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
 	}
-	return maxId + 1
+	json.NewEncoder(w).Encode(&id)
+}
+
+func CompleteBout(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	id := vars["bout_id"]
+	sqlStmt := `UPDATE bout SET completed = true WHERE bout_id = $1`
+	_, err := dbconn.Exec(sqlStmt, id)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	json.NewEncoder(w).Encode(&id)
 }
