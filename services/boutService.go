@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"ronin/models"
@@ -79,13 +80,16 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var bout = models.GetBout()
 	_ = json.NewDecoder(r.Body).Decode(&bout)
-	sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, accepted, completed, points) VALUES ($1, $2, $3, $4, $5)`
-	_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.Accepted, bout.Completed, bout.Points)
-	if err != nil {
-		http.Error(w, err.Error(), 400)
-		return
+	//check that the challenger_id and acceptor_id are different
+	if bout.ChallengerId != bout.AcceptorId {
+		sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, accepted, completed, points) VALUES ($1, $2, $3, $4, $5)`
+		_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.Accepted, bout.Completed, bout.Points)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		json.NewEncoder(w).Encode(&bout)
 	}
-	json.NewEncoder(w).Encode(&bout)
 }
 
 func UpdateBout(w http.ResponseWriter, r *http.Request) {
