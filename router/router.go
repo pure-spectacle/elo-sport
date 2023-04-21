@@ -29,12 +29,11 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc("/gym", services.CreateGym).Methods("POST")
 	router.HandleFunc("/gym/{gym_id}", services.GetGym).Methods("GET")
 
-	router.HandleFunc("/outcome", services.CreateOutcome).Methods("POST")
+	outcomeService := services.OutcomeService{}
+	router.HandleFunc("/outcome", outcomeService.CreateOutcome).Methods("POST")
 	router.HandleFunc("/outcome/{outcome_id}", services.GetOutcome).Methods("GET")
 	router.HandleFunc("/outcome/bout/{bout_id}", services.GetOutcomeByBout).Methods("GET")
-	router.HandleFunc("/outcome/bout/{bout_id}", services.CreateOutcomeByBout).Methods("POST")
-
-
+	router.HandleFunc("/outcome/bout/{bout_id}", outcomeService.CreateOutcomeByBout).Methods("POST")
 
 	return router
 }

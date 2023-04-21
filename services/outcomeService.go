@@ -3,12 +3,21 @@ package services
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"ronin/models"
 
 	"github.com/gorilla/mux"
 )
+
+type OutcomeService struct {
+	athleteScoreService *AthleteScoreService
+}
+
+func NewOutcomeService(athleteScoreService *AthleteScoreService) *OutcomeService {
+	return &OutcomeService{athleteScoreService: athleteScoreService}
+}
 
 func GetAllOutcomes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -71,14 +80,21 @@ func GetOutcome(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreateOutcome(w http.ResponseWriter, r *http.Request) {
+func (o *OutcomeService) CreateOutcome(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var outcome = models.GetOutcome()
 	_ = json.NewDecoder(r.Body).Decode(&outcome)
 	sqlStmt := `INSERT INTO outcome (bout_id, winner_id, loser_id, disputed) VALUES ($1, $2, $3, $4) RETURNING outcome_id`
 	err := dbconn.QueryRowx(sqlStmt, outcome.BoutId, outcome.WinnerId, outcome.LoserId, outcome.Disputed).StructScan(&outcome)
 
-	if err == nil {
+	//get winner id and loser id, and get their athlete scores
+	//create or update the athlete score
+	loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId)
+	winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId)
+
+	UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0])
+
+	if winnerErr == nil && loserErr == nil {
 		json.NewEncoder(w).Encode(&outcome)
 	} else {
 		http.Error(w, err.Error(), 400)
@@ -93,6 +109,7 @@ func GetOutcomeByBout(w http.ResponseWriter, r *http.Request) {
 	id := vars["bout_id"]
 	var tempOutcome = models.GetOutcome()
 	sqlStmt := `SELECT * FROM outcome where bout_id = $1`
+
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
@@ -116,20 +133,25 @@ func GetOutcomeByBout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreateOutcomeByBout(w http.ResponseWriter, r *http.Request) {
+func (o *OutcomeService) CreateOutcomeByBout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var outcome = models.GetOutcome()
 	vars := mux.Vars(r)
 	boutId := vars["bout_id"]
 	_ = json.NewDecoder(r.Body).Decode(&outcome)
 	sqlStmt := `INSERT INTO outcome (bout_id, winner_id, loser_id, disputed) VALUES ($1, $2, $3, $4) RETURNING outcome_id`
+	loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId)
+	winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId)
+
+	fmt.Println(loserScore[0])
+	fmt.Println(winnerScore[0])
+	UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0])
 	err := dbconn.QueryRowx(sqlStmt, boutId, outcome.WinnerId, outcome.LoserId, outcome.Disputed).StructScan(&outcome)
 
-	if err == nil {
+	if loserErr == nil && winnerErr == nil {
 		json.NewEncoder(w).Encode(&outcome)
 	} else {
 		http.Error(w, err.Error(), 400)
 		return
 	}
 }
-
