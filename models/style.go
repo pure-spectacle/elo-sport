@@ -2,7 +2,7 @@ package models
 
 type Style struct {
 	StyleId   int    `json:"styleId" db:"style_id"`
-	Name      string `json:"name" db:"style_name"`
+	StyleName string `json:"name" db:"style_name"`
 }
 
 func GetStyle() Style {

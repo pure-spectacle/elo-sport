@@ -15,6 +15,7 @@ const K float64 = 32
 
 type AthleteScoreService struct {
 	outcomeService *OutcomeService
+	styleService   *StyleService
 }
 
 func GetAllAthleteScores(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +112,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
 	// vars := mux.Vars(r)
 	// athleteId := vars["athlete_id"]
 	var athleteScore = models.GetAthleteScore()
-	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style = $2`
+	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
 	winnerRows, winErr := dbconn.Queryx(sqlStmt, winnerScore.AthleteId, winnerScore.StyleId)
 	loserRows, losErr := dbconn.Queryx(sqlStmt, loserScore.AthleteId, loserScore.StyleId)
 
@@ -124,7 +125,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
 		switch winErr {
 		case sql.ErrNoRows:
 			{
-				sqlStmt := `INSERT INTO athlete_score (athlete_id, style, score) VALUES ($1, $2, $3)`
+				sqlStmt := `INSERT INTO athlete_score (athlete_id, style_id, score) VALUES ($1, $2, $3)`
 				_, err := dbconn.Exec(sqlStmt, winnerScore.AthleteId, winnerScore.StyleId, winnerUpdatedScore)
 				if err != nil {
 					log.Println("Insert winner athlete score failed.")
@@ -132,7 +133,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
 				}
 			}
 		case nil:
-			sqlStmt := `UPDATE athlete_score SET score = $1 WHERE athlete_id = $2 and style = $3`
+			sqlStmt := `UPDATE athlete_score SET score = $1 WHERE athlete_id = $2 and style_id = $3`
 			_, err := dbconn.Exec(sqlStmt, winnerUpdatedScore, winnerScore.AthleteId, winnerScore.StyleId)
 			if err != nil {
 				log.Println("Update winner athlete score failed.")
@@ -150,7 +151,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
 		switch losErr {
 		case sql.ErrNoRows:
 			{
-				sqlStmt := `INSERT INTO athlete_score (athlete_id, style, score) VALUES ($1, $2, $3)`
+				sqlStmt := `INSERT INTO athlete_score (athlete_id, style_id, score) VALUES ($1, $2, $3)`
 				_, err := dbconn.Exec(sqlStmt, loserScore.AthleteId, loserScore.StyleId, loserUpdatedScore)
 				if err != nil {
 					log.Println("Insert loser athlete score failed.")
@@ -158,7 +159,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
 				}
 			}
 		case nil:
-			sqlStmt := `UPDATE athlete_score SET score = $1 WHERE athlete_id = $2 and style = $3`
+			sqlStmt := `UPDATE athlete_score SET score = $1 WHERE athlete_id = $2 and style_id = $3`
 			_, err := dbconn.Exec(sqlStmt, loserUpdatedScore, loserScore.AthleteId, loserScore.StyleId)
 			if err != nil {
 				log.Println("Update loser athlete score failed.")
@@ -168,6 +169,16 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
 			return
 		}
 	}
+}
+
+func (a *AthleteScoreService) CreateAthleteScoreUponRegistration(athleteId, styleId int) error {
+	sqlStmt := `INSERT INTO athlete_score (athlete_id, style_id, score) VALUES ($1, $2, $3)`
+	_, err := dbconn.Exec(sqlStmt, athleteId, styleId, 400)
+	if err != nil {
+		log.Println("Insert athlete score failed.")
+		return err
+	}
+	return nil
 }
 
 func CalculateScore(winnerScore, loserScore models.AthleteScore) (float64, float64) {
@@ -181,5 +192,5 @@ func CalculateScore(winnerScore, loserScore models.AthleteScore) (float64, float
 	updatedScore1 := winnerScore.Score + K*(outcome1-expectedOutcome1)
 	updatedScore2 := loserScore.Score + K*(outcome2-expectedOutcome2)
 
-	return updatedScore1, updatedScore2
+	return math.Round(updatedScore1), math.Round(updatedScore2)
 }
