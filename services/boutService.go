@@ -3,7 +3,6 @@ package services
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"ronin/models"
@@ -80,7 +79,6 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var bout = models.GetBout()
 	_ = json.NewDecoder(r.Body).Decode(&bout)
-	//check that the challenger_id and acceptor_id are different
 	if bout.ChallengerId != bout.AcceptorId {
 		sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, accepted, completed, points) VALUES ($1, $2, $3, $4, $5)`
 		_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.Accepted, bout.Completed, bout.Points)
@@ -89,6 +87,13 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		json.NewEncoder(w).Encode(&bout)
+	} else {
+		// Send a notification to the user when challengerId and acceptorId are the same
+		w.WriteHeader(http.StatusBadRequest)
+		errorMessage := map[string]string{
+			"error": "ChallengerId and AcceptorId must be different. You cannot create a bout against yourself.",
+		}
+		json.NewEncoder(w).Encode(errorMessage)
 	}
 }
 
