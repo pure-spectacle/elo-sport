@@ -5,7 +5,6 @@ type Outcome struct {
 	BoutId    int `json:"boutId" db:"bout_id"`
 	WinnerId  int `json:"winnerId" db:"winner_id"`
 	LoserId   int `json:"loserId" db:"loser_id"`
-	Disputed bool `json:"disputed" db:"disputed"`
 }
 
 func GetOutcome() Outcome {
