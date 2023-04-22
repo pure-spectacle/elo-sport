@@ -13,10 +13,7 @@ import (
 
 const K float64 = 32
 
-type AthleteScoreService struct {
-	outcomeService *OutcomeService
-	styleService   *StyleService
-}
+type AthleteScoreService struct {}
 
 func GetAllAthleteScores(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

@@ -90,3 +90,4 @@ func (s *StyleService) RegisterAthleteToStyle(w http.ResponseWriter, r *http.Req
 		return
 	}
 }
+
