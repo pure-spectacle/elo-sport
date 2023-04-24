@@ -81,9 +81,9 @@ func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sqlStatement := `INSERT INTO athlete (gym_id, first_name, last_name, username, birth_date, wins, losses)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	_, err = dbconn.Queryx(sqlStatement, athlete.GymId, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Wins, athlete.Losses)
+	sqlStatement := `INSERT INTO athlete (first_name, last_name, username, birth_date, email, password)
+		VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err = dbconn.Queryx(sqlStatement, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Email, athlete.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -103,8 +103,8 @@ func UpdateAthlete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sqlStatement := `UPDATE athlete SET gym_id = $1, first_name = $2, last_name = $3, username = $4, birth_date = $5, wins = $6, losses = $7 WHERE athlete_id = $8`
-	_, err = dbconn.Queryx(sqlStatement, athlete.GymId, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Wins, athlete.Losses, athlete.AthleteId)
+	sqlStatement := `UPDATE athlete SET first_name = $2, last_name = $3, username = $4, birth_date = $5, email = $6, password = $7 WHERE athlete_id = $8`
+	_, err = dbconn.Queryx(sqlStatement, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Email, athlete.Password, athlete.AthleteId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

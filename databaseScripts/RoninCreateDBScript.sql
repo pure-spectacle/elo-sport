@@ -1,6 +1,6 @@
 BEGIN TRANSACTION;
 
-DROP TABLE IF EXISTS athlete, gym, referee, style, athlete, athlete_score, bout, outcome, athlete_style, competition, athlete_competition, referee_style CASCADE; 
+DROP TABLE IF EXISTS athlete, gym, referee, style, athlete, athlete_record, athlete_gym, athlete_score, bout, outcome, athlete_style, competition, athlete_competition, referee_style CASCADE; 
 
 CREATE TABLE gym (
 	gym_id serial PRIMARY KEY,
@@ -28,14 +28,26 @@ CREATE TABLE style (
 
 CREATE TABLE athlete (
 	athlete_id serial PRIMARY KEY,
-    gym_id int, 
 	first_name varchar(20) NOT NULL,
 	last_name varchar(30) NOT NULL,
     username varchar(30) NOT NULL,
 	birth_date date NOT NULL,
-    wins int, 
+    password varchar(30) NOT NULL,
+    email varchar(100) NOT NULL);
+
+CREATE TABLE athlete_record (
+    athlete_id int,
+    wins int,
     losses int,
-	CONSTRAINT FK_gym_id FOREIGN KEY (gym_id) REFERENCES gym(gym_id));
+    CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id)
+);
+
+CREATE TABLE athlete_gym (
+    athlete_id int,
+    gym_id int,
+    CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id),
+    CONSTRAINT FK_gym_id FOREIGN KEY (gym_id) REFERENCES gym(gym_id),
+    CONSTRAINT unique_athlete_gym UNIQUE (athlete_id, gym_id));
 	
 CREATE TABLE athlete_score (
     athlete_id serial,
