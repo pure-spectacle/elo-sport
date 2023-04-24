@@ -46,11 +46,13 @@ CREATE TABLE athlete_score (
 	
 CREATE TABLE bout (
 	bout_id serial PRIMARY KEY,
-	challenger_id int,
-    acceptor_id int,
+	challenger_id int NOT NULL,
+    acceptor_id int NOT NULL,
+    referee_id int NOT NULL,
     accepted boolean,
     completed boolean,
     points int,
+    CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES athlete(athlete_id),
 	CONSTRAINT FK_challenger_id FOREIGN KEY (challenger_id) REFERENCES athlete(athlete_id),
     CONSTRAINT FK_acceptor_id FOREIGN KEY (acceptor_id) REFERENCES athlete(athlete_id));
 

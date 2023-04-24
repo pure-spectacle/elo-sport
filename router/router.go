@@ -21,7 +21,7 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc("/bout/{bout_id}", services.DeleteBout).Methods("DELETE")
 	router.HandleFunc("/bout/{bout_id}/accept", services.AcceptBout).Methods("PUT")
 	router.HandleFunc("/bout/{bout_id}/decline", services.DeclineBout).Methods("PUT")
-	router.HandleFunc("/bout/{bout_id}/complete", services.CompleteBout).Methods("PUT")
+	router.HandleFunc("/bout/{bout_id}/complete/{referee_id}", services.CompleteBout).Methods("PUT")
 	router.HandleFunc("/bout/pending/{athlete_id}", services.GetPendingBouts).Methods("GET")
 	router.HandleFunc("/bout/incomplete/{athlete_id}", services.GetIncompleteBouts).Methods("GET")
 

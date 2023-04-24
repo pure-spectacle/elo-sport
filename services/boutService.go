@@ -80,8 +80,8 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 	var bout = models.GetBout()
 	_ = json.NewDecoder(r.Body).Decode(&bout)
 	if bout.ChallengerId != bout.AcceptorId {
-		sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, accepted, completed, points) VALUES ($1, $2, $3, $4, $5)`
-		_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.Accepted, bout.Completed, bout.Points)
+		sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, referee_id, accepted, completed, points) VALUES ($1, $2, $3, $4, $5, $6)`
+		_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.Accepted, bout.Completed, bout.Points)
 		if err != nil {
 			http.Error(w, err.Error(), 400)
 			return
@@ -103,8 +103,8 @@ func UpdateBout(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&bout)
 	vars := mux.Vars(r)
 	id := vars["bout_id"]
-	sqlStmt := `UPDATE bout SET challenger_id = $1, acceptor_id = $2, accepted = $3, points = $4 WHERE bout_id = $5`
-	_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.Accepted, bout.Points, id)
+	sqlStmt := `UPDATE bout SET challenger_id = $1, acceptor_id = $2, referee_id =$3, accepted = $4, points = $5 WHERE bout_id = $6`
+	_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.Accepted, bout.Points, id)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
@@ -142,7 +142,7 @@ func DeclineBout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id := vars["bout_id"]
-	sqlStmt := `UPDATE bout SET accepted = false WHERE bout_id = $1`
+	sqlStmt := `UPDATE bout SET accepted = false, completed = true WHERE bout_id = $1`
 	_, err := dbconn.Exec(sqlStmt, id)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
@@ -154,14 +154,32 @@ func DeclineBout(w http.ResponseWriter, r *http.Request) {
 func CompleteBout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
-	id := vars["bout_id"]
-	sqlStmt := `UPDATE bout SET completed = true WHERE bout_id = $1`
-	_, err := dbconn.Exec(sqlStmt, id)
+	boutId := vars["bout_id"]
+	refereeId := vars["referee_id"]
+	var refereeIdReturned string
+	sqlStmt := `SELECT referee_id FROM bout WHERE bout_id = $1`
+
+	err := dbconn.QueryRowx(sqlStmt, boutId).Scan(&refereeIdReturned)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	json.NewEncoder(w).Encode(&id)
+
+	if refereeId == refereeIdReturned {
+		sqlStmt := `UPDATE bout SET completed = true WHERE bout_id = $1`
+		_, err := dbconn.Exec(sqlStmt, boutId)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		json.NewEncoder(w).Encode(&boutId)
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		errorMessage := map[string]string{
+			"error": "You are not the referee of this bout.",
+		}
+		json.NewEncoder(w).Encode(errorMessage)
+	}
 }
 
 func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +218,7 @@ func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
 	var bouts = models.GetBouts()
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	sqlStmt := `SELECT * FROM bout where completed = false and (challenger_id = $1 or acceptor_id = $1)`
+	sqlStmt := `SELECT * FROM bout where completed = false and (challenger_id = $1 or acceptor_id = $1 or referee_id = $1)`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
