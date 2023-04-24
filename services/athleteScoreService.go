@@ -13,7 +13,7 @@ import (
 
 const K float64 = 32
 
-type AthleteScoreService struct {}
+type AthleteScoreService struct{}
 
 func GetAllAthleteScores(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -54,6 +54,35 @@ func GetAthleteScore(w http.ResponseWriter, r *http.Request) {
 	var tempAthleteScore = models.GetAthleteScore()
 	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1`
 	rows, err := dbconn.Queryx(sqlStmt, id)
+	if err == nil {
+		for rows.Next() {
+			err = rows.StructScan(&tempAthleteScore)
+			athleteScores = append(athleteScores, tempAthleteScore)
+		}
+		switch err {
+		case sql.ErrNoRows:
+			{
+				log.Println("no rows returns.")
+				http.Error(w, err.Error(), 204)
+			}
+		case nil:
+			json.NewEncoder(w).Encode(&athleteScores)
+		default:
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	}
+}
+
+func GetAthleteScoreByStyle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var athleteScores = models.GetAthleteScores()
+	vars := mux.Vars(r)
+	id := vars["athlete_id"]
+	style := vars["style_id"]
+	var tempAthleteScore = models.GetAthleteScore()
+	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
+	rows, err := dbconn.Queryx(sqlStmt, id, style)
 	if err == nil {
 		for rows.Next() {
 			err = rows.StructScan(&tempAthleteScore)

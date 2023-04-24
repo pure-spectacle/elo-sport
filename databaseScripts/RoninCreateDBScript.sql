@@ -38,7 +38,7 @@ CREATE TABLE athlete (
 	CONSTRAINT FK_gym_id FOREIGN KEY (gym_id) REFERENCES gym(gym_id));
 	
 CREATE TABLE athlete_score (
-    athlete_id serial PRIMARY KEY,
+    athlete_id serial,
     style_id int,
     score int,
     CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id),
