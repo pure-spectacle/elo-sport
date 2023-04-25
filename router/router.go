@@ -15,6 +15,7 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc(base_url+"/athlete", services.CreateAthlete).Methods("POST")
 	router.HandleFunc(base_url+"/athlete/{athlete_id}", services.UpdateAthlete).Methods("PUT")
 	router.HandleFunc(base_url+"/athlete/{athlete_id}", services.DeleteAthlete).Methods("DELETE")
+	router.HandleFunc(base_url+"/athlete/all/usernames", services.GetAllAthleteUsernames).Methods("GET")
 
 	router.HandleFunc(base_url+"/bouts", services.GetAllBouts).Methods("GET")
 	router.HandleFunc(base_url+"/bout/{bout_id}", services.GetBout).Methods("GET")

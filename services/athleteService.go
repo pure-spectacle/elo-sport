@@ -17,6 +17,44 @@ import (
 
 var dbconn *sqlx.DB
 
+type AthleteUsername struct {
+	Username string `json:"username" db:"username"`
+}
+
+func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	sqlStmt := `SELECT username FROM athlete`
+	rows, err := dbconn.Queryx(sqlStmt)
+
+	if err == nil {
+		var usernames []string
+		var tempUsername AthleteUsername
+
+		for rows.Next() {
+			err = rows.StructScan(&tempUsername)
+			usernames = append(usernames, tempUsername.Username)
+		}
+
+		switch err {
+		case sql.ErrNoRows:
+			{
+				log.Println("no rows returns.")
+				http.Error(w, err.Error(), http.StatusNoContent)
+			}
+		case nil:
+			json.NewEncoder(w).Encode(&usernames)
+		default:
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	} else {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+}
+
 func GetAllAthletes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -37,7 +75,7 @@ func GetAllAthletes(w http.ResponseWriter, r *http.Request) {
 		case sql.ErrNoRows:
 			{
 				log.Println("no rows returns.")
-				http.Error(w, err.Error(), 204)
+				http.Error(w, err.Error(), http.StatusNoContent)
 			}
 		case nil:
 			json.NewEncoder(w).Encode(&athletes)
