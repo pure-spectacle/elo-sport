@@ -15,6 +15,11 @@ const K float64 = 32
 
 type AthleteScoreService struct{}
 
+type AthleteStyleScore struct {
+	Score     string `json:"score" db:"score"`
+	StyleName string `json:"styleName" db:"style_name"`
+}
+
 func GetAllAthleteScores(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -48,11 +53,13 @@ func GetAllAthleteScores(w http.ResponseWriter, r *http.Request) {
 
 func GetAthleteScore(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var athleteScores = models.GetAthleteScores()
+	var athleteScores []AthleteStyleScore
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	var tempAthleteScore = models.GetAthleteScore()
-	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1`
+	var tempAthleteScore AthleteStyleScore
+	sqlStmt := `SELECT a.score, s.style_name FROM athlete_score as a
+	join style as s on s.style_id = a.style_id
+	where a.athlete_id = $1`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 	if err == nil {
 		for rows.Next() {
@@ -63,7 +70,7 @@ func GetAthleteScore(w http.ResponseWriter, r *http.Request) {
 		case sql.ErrNoRows:
 			{
 				log.Println("no rows returns.")
-				http.Error(w, err.Error(), 204)
+				http.Error(w, err.Error(), http.StatusNoContent)
 			}
 		case nil:
 			json.NewEncoder(w).Encode(&athleteScores)
@@ -92,7 +99,7 @@ func GetAthleteScoreByStyle(w http.ResponseWriter, r *http.Request) {
 		case sql.ErrNoRows:
 			{
 				log.Println("no rows returns.")
-				http.Error(w, err.Error(), 204)
+				http.Error(w, err.Error(), http.StatusNoContent)
 			}
 		case nil:
 			json.NewEncoder(w).Encode(&athleteScores)

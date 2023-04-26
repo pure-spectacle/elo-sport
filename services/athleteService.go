@@ -21,6 +21,13 @@ type AthleteUsername struct {
 	Username string `json:"username" db:"username"`
 }
 
+type AthleteRecord struct {
+	AthleteId int `json:"athlete_id" db:"athlete_id"`
+	Wins      int `json:"wins" db:"wins"`
+	Losses    int `json:"losses" db:"losses"`
+	//Add draws
+}
+
 func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -168,6 +175,28 @@ func DeleteAthlete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Athlete deleted successfully")
 
+}
+
+func GetAthleteRecord(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var record AthleteRecord
+	vars := mux.Vars(r)
+	id := vars["athlete_id"]
+	sqlStmt := `SELECT * FROM athlete_record where athlete_id = $1`
+	row, err := dbconn.Queryx(sqlStmt, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	} else {
+		for row.Next() {
+			err2 := row.StructScan(&record)
+			if err2 != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			json.NewEncoder(w).Encode(&record)
+		}
+	}
 }
 
 func SetDB(db *sqlx.DB) {
