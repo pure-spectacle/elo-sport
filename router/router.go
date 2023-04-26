@@ -45,6 +45,7 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc(base_url+"/style/athlete/{athlete_id}", styleService.RegisterAthleteToStyle).Methods("POST")
 
 	router.HandleFunc(base_url+"/score/{athlete_id}", services.GetAthleteScore).Methods("GET")
+	router.HandleFunc(base_url+"/score/{athlete_id}/all", services.GetAllAthleteScoresByAthleteId).Methods("GET")
 	router.HandleFunc(base_url+"/score/{athlete_id}/style/{style_id}", services.GetAthleteScoreByStyle).Methods("GET")
 
 	return router

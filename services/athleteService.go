@@ -22,9 +22,9 @@ type AthleteUsername struct {
 }
 
 type AthleteRecord struct {
-	AthleteId int `json:"athlete_id" db:"athlete_id"`
-	Wins      int `json:"wins" db:"wins"`
-	Losses    int `json:"losses" db:"losses"`
+	AthleteId int    `json:"athlete_id" db:"athlete_id"`
+	StyleName string `json:"styleName" db:"style_name"`
+	Score     string `json:"score" db:"score"`
 	//Add draws
 }
 
@@ -117,26 +117,44 @@ func GetAthlete(w http.ResponseWriter, r *http.Request) {
 
 }
 
+type AthleteId struct {
+	AthleteId int `json:"athleteId" db:"athlete_id"`
+}
+
 func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var athlete models.Athlete
 	err := json.NewDecoder(r.Body).Decode(&athlete)
+	var athleteId int
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	sqlStatement := `INSERT INTO athlete (first_name, last_name, username, birth_date, email, password)
-		VALUES ($1, $2, $3, $4, $5, $6)`
-	_, err = dbconn.Queryx(sqlStatement, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Email, athlete.Password)
+		VALUES ($1, $2, $3, $4, $5, $6) RETURNING athlete_id`
+	rows, err := dbconn.Queryx(sqlStatement, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Email, athlete.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	} else {
+		for rows.Next() {
+			err = rows.Scan(&athleteId)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			sqlStmt := `INSERT INTO athlete_record (athlete_id, wins, losses) VALUES ($1, 0, 0)`
+			_, err = dbconn.Queryx(sqlStmt, athleteId)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// Create AthleteId instance and encode it as JSON
+			idObj := AthleteId{AthleteId: athleteId}
+			json.NewEncoder(w).Encode(idObj)
+		}
 	}
-
-	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "Athlete created successfully")
-
 }
 
 func UpdateAthlete(w http.ResponseWriter, r *http.Request) {
@@ -194,8 +212,8 @@ func GetAthleteRecord(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			json.NewEncoder(w).Encode(&record)
 		}
+		json.NewEncoder(w).Encode(&record)
 	}
 }
 

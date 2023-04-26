@@ -20,13 +20,15 @@ type AthleteStyleScore struct {
 	StyleName string `json:"styleName" db:"style_name"`
 }
 
-func GetAllAthleteScores(w http.ResponseWriter, r *http.Request) {
+func GetAllAthleteScoresByAthleteId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var athleteScores = models.GetAthleteScores()
+	vars := mux.Vars(r)
+	id := vars["athlete_id"]
 
-	sqlStmt := `SELECT * FROM athlete_score`
-	rows, err := dbconn.Queryx(sqlStmt)
+	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1`
+	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
 		var tempAthleteScore = models.GetAthleteScore()
