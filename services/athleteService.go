@@ -21,11 +21,17 @@ type AthleteUsername struct {
 	Username string `json:"username" db:"username"`
 }
 
+// type AthleteStyleScore struct {
+// 	AthleteId int    `json:"athlete_id" db:"athlete_id"`
+// 	StyleName string `json:"styleName" db:"style_name"`
+// 	Score     string `json:"score" db:"score"`
+// 	//Add draws
+// }
+
 type AthleteRecord struct {
-	AthleteId int    `json:"athlete_id" db:"athlete_id"`
-	StyleName string `json:"styleName" db:"style_name"`
-	Score     string `json:"score" db:"score"`
-	//Add draws
+	AthleteId int `json:"athlete_id" db:"athlete_id"`
+	Wins      int `json:"wins" db:"wins"`
+	Losses    int `json:"losses" db:"losses"`
 }
 
 func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {

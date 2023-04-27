@@ -19,6 +19,11 @@ func NewStyleService(athleteScoreService *AthleteScoreService) *StyleService {
 	return &StyleService{athleteScoreService: athleteScoreService}
 }
 
+type RegisterStylesRequest struct {
+	AthleteID int   `json:"athleteId"`
+	Styles    []int `json:"styles"`
+}
+
 func GetAllStyles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -88,6 +93,37 @@ func (s *StyleService) RegisterAthleteToStyle(w http.ResponseWriter, r *http.Req
 	} else {
 		http.Error(w, err.Error(), 400)
 		return
+	}
+}
+
+func (s *StyleService) RegisterMultipleStylesToAthlete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var request RegisterStylesRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	athleteID := request.AthleteID
+	styles := request.Styles
+
+	for _, style := range styles {
+		var returnedStyleID int
+		sqlStmt := `INSERT INTO athlete_style (style_id, athlete_id) VALUES ($1, $2) RETURNING style_id`
+		err := dbconn.QueryRowx(sqlStmt, style, athleteID).Scan(&returnedStyleID)
+		if err == nil {
+			createErr := s.athleteScoreService.CreateAthleteScoreUponRegistration(athleteID, style)
+			if createErr != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			json.NewEncoder(w).Encode(&returnedStyleID)
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 }
 
