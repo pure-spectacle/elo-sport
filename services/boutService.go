@@ -11,6 +11,22 @@ import (
 	// "github.com/jmoiron/sqlx"
 )
 
+type OutboundBout struct {
+	BoutID      		int    `json:"boutId"`
+	ChallengerId 		int    `json:"challengerId"`
+	ChallengerFirstName string `json:"challengerFirstName"`
+	ChallengerLastName  string `json:"challengerLastName"`
+	Style    			string `json:"style"`
+	ChallengerScore     int    `json:"challengerScore"`
+	AcceptorId 			int    `json:"acceptorId"`
+	AcceptorFirstName 	string `json:"acceptorFirstName"`
+	AcceptorLastName 	string `json:"acceptorLastName"`
+	AcceptorScore 		int    `json:"acceptorScore"`
+	RefereeId 			int    `json:"refereeId"`
+	RefereeFirstName 	string `json:"refereeFirstName"`
+	RefereeLastName 	string `json:"refereeLastName"`
+}
+
 func GetAllBouts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

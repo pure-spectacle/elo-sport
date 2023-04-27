@@ -127,3 +127,44 @@ func (s *StyleService) RegisterMultipleStylesToAthlete(w http.ResponseWriter, r 
 	}
 }
 
+func GetCommonStyles(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	acceptorId := vars["athlete_id"]
+	challengerId := vars["challenger_id"]
+
+	var styles = models.GetStyles()
+
+	sqlStmt := `SELECT s.style_id, s.style_name
+	FROM style AS s
+	JOIN athlete_style AS as1 ON s.style_id = as1.style_id
+	JOIN athlete_style AS as2 ON s.style_id = as2.style_id
+	WHERE as1.athlete_id=$1 and as2.athlete_id=$2`
+	rows, err := dbconn.Queryx(sqlStmt, acceptorId, challengerId)
+
+	if err == nil {
+		var tempStyle = models.GetStyle()
+
+		for rows.Next() {
+			err = rows.StructScan(&tempStyle)
+			styles = append(styles, tempStyle)
+		}
+
+		switch err {
+		case sql.ErrNoRows:
+			{
+				log.Println("no rows returns.")
+				http.Error(w, err.Error(), 204)
+			}
+		case nil:
+			json.NewEncoder(w).Encode(&styles)
+		default:
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	} else {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+}
