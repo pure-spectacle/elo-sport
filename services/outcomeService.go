@@ -101,7 +101,7 @@ func (o *OutcomeService) CreateOutcome(w http.ResponseWriter, r *http.Request) {
 		loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId)
 		winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId)
 
-		UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0])
+		UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0], outcome.IsDraw)
 
 		if winnerErr == nil && loserErr == nil {
 			json.NewEncoder(w).Encode(&outcome)
@@ -175,7 +175,7 @@ func (o *OutcomeService) CreateOutcomeByBout(w http.ResponseWriter, r *http.Requ
 		loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId)
 		winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId)
 
-		UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0])
+		UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0], outcome.IsDraw)
 		err = dbconn.QueryRowx(sqlStmt, boutId, outcome.WinnerId, outcome.LoserId).StructScan(&outcome)
 
 		if loserErr == nil && winnerErr == nil {

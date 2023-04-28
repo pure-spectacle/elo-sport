@@ -39,6 +39,7 @@ CREATE TABLE athlete_record (
     athlete_id int,
     wins int,
     losses int,
+    draws int,
     CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id)
 );
 
@@ -61,11 +62,13 @@ CREATE TABLE bout (
 	challenger_id int NOT NULL,
     acceptor_id int NOT NULL,
     referee_id int NOT NULL,
+    style_id int NOT NULL,
     accepted boolean,
     completed boolean,
     points int,
     CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES athlete(athlete_id),
 	CONSTRAINT FK_challenger_id FOREIGN KEY (challenger_id) REFERENCES athlete(athlete_id),
+    CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id),
     CONSTRAINT FK_acceptor_id FOREIGN KEY (acceptor_id) REFERENCES athlete(athlete_id));
 
 CREATE TABLE outcome (
@@ -73,6 +76,7 @@ CREATE TABLE outcome (
     bout_id int UNIQUE,
     winner_id int,
     loser_id int,
+    is_draw boolean,
     CONSTRAINT FK_winner_id FOREIGN KEY (winner_id) REFERENCES athlete(athlete_id),
     CONSTRAINT FK_loser_id FOREIGN KEY (loser_id) REFERENCES athlete(athlete_id),
     CONSTRAINT FK_bout_id FOREIGN KEY (bout_id) REFERENCES bout(bout_id));

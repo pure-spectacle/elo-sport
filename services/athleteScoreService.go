@@ -142,7 +142,7 @@ func (a *AthleteScoreService) GetAthleteScoreById(id int) ([]models.AthleteScore
 	return athleteScores, err
 }
 
-func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
+func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool) {
 	// w.Header().Set("Content-Type", "application/json")
 	// vars := mux.Vars(r)
 	// athleteId := vars["athlete_id"]
@@ -151,7 +151,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore) {
 	winnerRows, winErr := dbconn.Queryx(sqlStmt, winnerScore.AthleteId, winnerScore.StyleId)
 	loserRows, losErr := dbconn.Queryx(sqlStmt, loserScore.AthleteId, loserScore.StyleId)
 
-	winnerUpdatedScore, loserUpdatedScore := CalculateScore(winnerScore, loserScore)
+	winnerUpdatedScore, loserUpdatedScore := CalculateScore(winnerScore, loserScore, isDraw)
 	if winErr == nil {
 		for winnerRows.Next() {
 			winErr = winnerRows.StructScan(&athleteScore)
@@ -216,13 +216,18 @@ func (a *AthleteScoreService) CreateAthleteScoreUponRegistration(athleteId, styl
 	return nil
 }
 
-func CalculateScore(winnerScore, loserScore models.AthleteScore) (float64, float64) {
+func CalculateScore(winnerScore, loserScore models.AthleteScore, isDraw bool) (float64, float64) {
 	expectedOutcome1 := 1 / (1 + math.Pow(10, (loserScore.Score-winnerScore.Score)/400))
 	expectedOutcome2 := 1 / (1 + math.Pow(10, (winnerScore.Score-loserScore.Score)/400))
 
 	var outcome1, outcome2 float64
-	outcome1 = 1
-	outcome2 = 0
+	if isDraw {
+		outcome1 = 0.5
+		outcome2 = 0.5
+	} else {
+		outcome1 = 1
+		outcome2 = 0
+	}
 
 	updatedScore1 := winnerScore.Score + K*(outcome1-expectedOutcome1)
 	updatedScore2 := loserScore.Score + K*(outcome2-expectedOutcome2)

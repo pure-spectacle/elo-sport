@@ -32,6 +32,7 @@ type AthleteRecord struct {
 	AthleteId int `json:"athlete_id" db:"athlete_id"`
 	Wins      int `json:"wins" db:"wins"`
 	Losses    int `json:"losses" db:"losses"`
+	Draws     int `json:"draws" db:"draws"`
 }
 
 func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +151,7 @@ func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			sqlStmt := `INSERT INTO athlete_record (athlete_id, wins, losses) VALUES ($1, 0, 0)`
+			sqlStmt := `INSERT INTO athlete_record (athlete_id, wins, losses, draws) VALUES ($1, 0, 0, 0)`
 			_, err = dbconn.Queryx(sqlStmt, athleteId)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -12,19 +12,19 @@ import (
 )
 
 type OutboundBout struct {
-	BoutID      		int    `json:"boutId"`
-	ChallengerId 		int    `json:"challengerId"`
+	BoutId              int    `json:"boutId"`
+	ChallengerId        int    `json:"challengerId"`
 	ChallengerFirstName string `json:"challengerFirstName"`
 	ChallengerLastName  string `json:"challengerLastName"`
-	Style    			string `json:"style"`
+	Style               string `json:"style"`
 	ChallengerScore     int    `json:"challengerScore"`
-	AcceptorId 			int    `json:"acceptorId"`
-	AcceptorFirstName 	string `json:"acceptorFirstName"`
-	AcceptorLastName 	string `json:"acceptorLastName"`
-	AcceptorScore 		int    `json:"acceptorScore"`
-	RefereeId 			int    `json:"refereeId"`
-	RefereeFirstName 	string `json:"refereeFirstName"`
-	RefereeLastName 	string `json:"refereeLastName"`
+	AcceptorId          int    `json:"acceptorId"`
+	AcceptorFirstName   string `json:"acceptorFirstName"`
+	AcceptorLastName    string `json:"acceptorLastName"`
+	AcceptorScore       int    `json:"acceptorScore"`
+	RefereeId           int    `json:"refereeId"`
+	RefereeFirstName    string `json:"refereeFirstName"`
+	RefereeLastName     string `json:"refereeLastName"`
 }
 
 func GetAllBouts(w http.ResponseWriter, r *http.Request) {
@@ -96,20 +96,61 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 	var bout = models.GetBout()
 	_ = json.NewDecoder(r.Body).Decode(&bout)
 	if bout.ChallengerId != bout.AcceptorId {
-		sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, referee_id, accepted, completed, points) VALUES ($1, $2, $3, $4, $5, $6)`
-		_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.Accepted, bout.Completed, bout.Points)
+		sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, referee_id, accepted, completed, points, style_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING bout_id`
+		err := dbconn.QueryRow(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.Accepted, bout.Completed, bout.Points, bout.StyleId).Scan(&bout.BoutId)
 		if err != nil {
 			http.Error(w, err.Error(), 400)
 			return
 		}
-		json.NewEncoder(w).Encode(&bout)
+
+		sqlOutboundBout := `
+			SELECT 
+				b.bout_id AS "boutId",
+				b.challenger_id AS "challengerId",
+				c.first_name AS "challengerFirstName",
+				c.last_name AS "challengerLastName",
+				s.style_name AS "style",
+				cs.score AS "challengerScore",
+				b.acceptor_id AS "acceptorId",
+				a.first_name AS "acceptorFirstName",
+				a.last_name AS "acceptorLastName",
+				ascore.score AS "acceptorScore",
+				r.athlete_id AS "refereeId",
+				r.first_name AS "refereeFirstName",
+				r.last_name AS "refereeLastName"
+			FROM 
+				bout b
+			JOIN 
+				athlete c ON b.challenger_id = c.athlete_id
+			JOIN 
+				athlete a ON b.acceptor_id = a.athlete_id
+			JOIN 
+				athlete_score cs ON b.challenger_id = cs.athlete_id AND b.style_id = cs.style_id
+			JOIN 
+				athlete_score ascore ON b.acceptor_id = ascore.athlete_id AND b.style_id = ascore.style_id
+			JOIN 
+				athlete r ON b.referee_id = r.athlete_id
+			JOIN 
+				style s ON b.style_id = s.style_id
+			WHERE 
+				b.bout_id = $1;
+		`
+		var outboundBout OutboundBout
+		err = dbconn.QueryRow(sqlOutboundBout, bout.BoutId).Scan(&outboundBout.BoutId, &outboundBout.ChallengerId, &outboundBout.ChallengerFirstName, &outboundBout.ChallengerLastName, &outboundBout.Style, &outboundBout.ChallengerScore, &outboundBout.AcceptorId, &outboundBout.AcceptorFirstName, &outboundBout.AcceptorLastName, &outboundBout.AcceptorScore, &outboundBout.RefereeId, &outboundBout.RefereeFirstName, &outboundBout.RefereeLastName)
+
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+
+		json.NewEncoder(w).Encode(&outboundBout)
 	} else {
-		// Send a notification to the user when challengerId and acceptorId are the same
 		w.WriteHeader(http.StatusBadRequest)
 		errorMessage := map[string]string{
 			"error": "ChallengerId and AcceptorId must be different. You cannot create a bout against yourself.",
 		}
-		json.NewEncoder(w).Encode(errorMessage)
+		json.NewEncoder(w).
+			Encode(errorMessage)
 	}
 }
 
@@ -119,8 +160,8 @@ func UpdateBout(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&bout)
 	vars := mux.Vars(r)
 	id := vars["bout_id"]
-	sqlStmt := `UPDATE bout SET challenger_id = $1, acceptor_id = $2, referee_id =$3, accepted = $4, points = $5 WHERE bout_id = $6`
-	_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.Accepted, bout.Points, id)
+	sqlStmt := `UPDATE bout SET challenger_id = $1, acceptor_id = $2, referee_id =$3, accepted = $4, points = $5, style_id = $6 WHERE bout_id = $7`
+	_, err := dbconn.Exec(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.Accepted, bout.Points, bout.StyleId, id)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
