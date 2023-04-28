@@ -121,7 +121,60 @@ func GetAthlete(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(&athletes)
 	}
+}
 
+func GetAthleteByUsername(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var athletes = models.GetAthletes()
+	vars := mux.Vars(r)
+	username := vars["username"]
+	var tempAthlete = models.GetAthlete()
+	sqlStmt := `SELECT * FROM athlete where username = $1`
+	rows, err := dbconn.Queryx(sqlStmt, username)
+	for rows.Next() {
+		err2 := rows.StructScan(&tempAthlete)
+		athletes = append(athletes, tempAthlete)
+		if err2 != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+
+		}
+		json.NewEncoder(w).Encode(&athletes)
+	}
+}
+
+func IsAuthorizedUser(w http.ResponseWriter, r *http.Request) {
+	var athlete models.Athlete
+	err := json.NewDecoder(r.Body).Decode(&athlete)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var athleteId int
+	sqlStmt := `SELECT count(*) FROM athlete where username = $1 and password = $2`
+	err = dbconn.QueryRow(sqlStmt, athlete.Username, athlete.Password).Scan(&athleteId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if athleteId == 1 {
+		var tempAthlete = models.GetAthlete()
+		sqlStmt := `SELECT * FROM athlete where username = $1`
+		rows, err := dbconn.Queryx(sqlStmt, athlete.Username)
+		for rows.Next() {
+			err2 := rows.StructScan(&tempAthlete)
+			if err2 != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+
+			}
+			idObj := AthleteId{AthleteId: tempAthlete.AthleteId}
+			json.NewEncoder(w).Encode(&idObj)
+		}
+	} else {
+		json.NewEncoder(w).Encode(false)
+	}
 }
 
 type AthleteId struct {
