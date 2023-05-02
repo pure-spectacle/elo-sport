@@ -65,6 +65,7 @@ CREATE TABLE bout (
     style_id int NOT NULL,
     accepted boolean,
     completed boolean,
+    cancelled boolean,
     points int,
     CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES athlete(athlete_id),
 	CONSTRAINT FK_challenger_id FOREIGN KEY (challenger_id) REFERENCES athlete(athlete_id),

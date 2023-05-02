@@ -27,8 +27,9 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc(base_url+"/bout/{bout_id}/accept", services.AcceptBout).Methods("PUT")
 	router.HandleFunc(base_url+"/bout/{bout_id}/decline", services.DeclineBout).Methods("PUT")
 	router.HandleFunc(base_url+"/bout/{bout_id}/complete/{referee_id}", services.CompleteBout).Methods("PUT")
-	router.HandleFunc(base_url+"/bout/pending/{athlete_id}", services.GetPendingBouts).Methods("GET")
-	router.HandleFunc(base_url+"/bout/incomplete/{athlete_id}", services.GetIncompleteBouts).Methods("GET")
+	router.HandleFunc(base_url+"/bouts/pending/{athlete_id}", services.GetPendingBouts).Methods("GET")
+	router.HandleFunc(base_url+"/bouts/incomplete/{athlete_id}", services.GetIncompleteBouts).Methods("GET")
+	router.HandleFunc(base_url+"/bout/cancel/{bout_id}/{challenger_id}", services.CancelBout).Methods("PUT")
 
 	router.HandleFunc(base_url+"/gyms", services.GetAllGyms).Methods("GET")
 	router.HandleFunc(base_url+"/gym", services.CreateGym).Methods("POST")
