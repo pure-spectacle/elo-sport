@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"ronin/models"
@@ -93,15 +94,15 @@ func (o *OutcomeService) CreateOutcome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if count < 1 {
-		sqlStmt := `INSERT INTO outcome (bout_id, winner_id, loser_id) VALUES ($1, $2, $3) RETURNING outcome_id`
-		err = dbconn.QueryRowx(sqlStmt, outcome.BoutId, outcome.WinnerId, outcome.LoserId).StructScan(&outcome)
+		sqlStmt := `INSERT INTO outcome (bout_id, winner_id, loser_id, style_id) VALUES ($1, $2, $3, $4) RETURNING outcome_id`
+		err = dbconn.QueryRowx(sqlStmt, outcome.BoutId, outcome.WinnerId, outcome.LoserId, outcome.StyleId).StructScan(&outcome)
 
 		// Get winner id and loser id, and get their athlete scores
 		// Create or update the athlete score
-		loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId)
-		winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId)
+		loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId, outcome.StyleId)
+		winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId, outcome.StyleId)
 
-		UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0], outcome.IsDraw)
+		UpdateOrCreateAthleteScore(winnerScore, loserScore, outcome.IsDraw)
 
 		if winnerErr == nil && loserErr == nil {
 			json.NewEncoder(w).Encode(&outcome)
@@ -158,32 +159,21 @@ func (o *OutcomeService) CreateOutcomeByBout(w http.ResponseWriter, r *http.Requ
 	_ = json.NewDecoder(r.Body).Decode(&outcome)
 
 	// Check if bout_id already exists in the outcome table
-	var boutIdInOutcomeTableCount int
-	var boutIdInBoutIdTableCount int
+	var boutIdInOutcomeTableCount, boutIdInBoutIdTableCount int
 	err := dbconn.QueryRowx("SELECT COUNT(*) FROM outcome WHERE bout_id = $1", boutId).Scan(&boutIdInOutcomeTableCount)
 	err2 := dbconn.QueryRowx("SELECT COUNT(*) FROM bout WHERE bout_id = $1", boutId).Scan(&boutIdInBoutIdTableCount)
-	if err != nil {
+	if err != nil || err2 != nil {
 		http.Error(w, err.Error(), 400)
-		return
-	} else if err2 != nil {
-		http.Error(w, err2.Error(), 400)
 		return
 	}
 
 	if boutIdInOutcomeTableCount == 0 && boutIdInBoutIdTableCount == 1 {
-		sqlStmt := `INSERT INTO outcome (bout_id, winner_id, loser_id) VALUES ($1, $2, $3) RETURNING outcome_id`
-		loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId)
-		winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId)
-
-		UpdateOrCreateAthleteScore(winnerScore[0], loserScore[0], outcome.IsDraw)
-		err = dbconn.QueryRowx(sqlStmt, boutId, outcome.WinnerId, outcome.LoserId).StructScan(&outcome)
-
-		if loserErr == nil && winnerErr == nil {
-			json.NewEncoder(w).Encode(&outcome)
-		} else {
+		err := o.insertOutcomeAndUpdateAthleteScores(&outcome, boutId)
+		if err != nil {
 			http.Error(w, err.Error(), 400)
 			return
 		}
+		json.NewEncoder(w).Encode(&outcome)
 	} else if boutIdInOutcomeTableCount > 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		errorMessage := map[string]string{
@@ -197,4 +187,36 @@ func (o *OutcomeService) CreateOutcomeByBout(w http.ResponseWriter, r *http.Requ
 		}
 		json.NewEncoder(w).Encode(errorMessage)
 	}
+}
+
+func (o *OutcomeService) insertOutcomeAndUpdateAthleteScores(outcome *models.Outcome, boutId string) error {
+	var sqlStmt string
+	if !outcome.IsDraw {
+		sqlStmt = `INSERT INTO outcome (bout_id, winner_id, loser_id, is_draw, style_id) VALUES ($1, $2, $3, $4, $5) RETURNING outcome_id`
+		err := dbconn.QueryRowx(sqlStmt, boutId, outcome.WinnerId, outcome.LoserId, outcome.IsDraw, outcome.StyleId).StructScan(outcome)
+		if err != nil {
+			return err
+		}
+	} else {
+		sqlStmt = `INSERT INTO outcome (bout_id, winner_id, loser_id, is_draw, style_id) VALUES ($1, null, null, true, $2) RETURNING outcome_id`
+		err := dbconn.QueryRowx(sqlStmt, boutId, outcome.StyleId).StructScan(outcome)
+		if err != nil {
+			return err
+		}
+	}
+
+	updateStatement := `UPDATE bout SET completed = true WHERE bout_id = $1`
+	_, err := dbconn.Exec(updateStatement, boutId)
+	if err != nil {
+		return err
+	}
+
+	loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId, outcome.StyleId)
+	winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId, outcome.StyleId)
+	if loserErr != nil || winnerErr != nil {
+		return errors.New("Error fetching athlete scores")
+	}
+
+	UpdateOrCreateAthleteScore(winnerScore, loserScore, outcome.IsDraw)
+	return nil
 }

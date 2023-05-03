@@ -33,6 +33,7 @@ type OutboundBout struct {
 	ChallengerFirstName string `json:"challengerFirstName" db:"challengerFirstName"`
 	ChallengerLastName  string `json:"challengerLastName" db:"challengerLastName"`
 	Style               string `json:"style" db:"style"`
+	StyleId             int    `json:"styleId" db:"styleId"`
 	ChallengerScore     int    `json:"challengerScore" db:"challengerScore"`
 	AcceptorId          int    `json:"acceptorId" db:"acceptorId"`
 	AcceptorFirstName   string `json:"acceptorFirstName" db:"acceptorFirstName"`
@@ -133,7 +134,8 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 				ascore.score AS "acceptorScore",
 				r.athlete_id AS "refereeId",
 				r.first_name AS "refereeFirstName",
-				r.last_name AS "refereeLastName"
+				r.last_name AS "refereeLastName",
+				s.style_id AS "styleId"
 			FROM 
 				bout b
 			JOIN 
@@ -152,7 +154,7 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 				b.bout_id = $1;
 		`
 		var outboundBout OutboundBout
-		err = dbconn.QueryRow(sqlOutboundBout, bout.BoutId).Scan(&outboundBout.BoutId, &outboundBout.ChallengerId, &outboundBout.ChallengerFirstName, &outboundBout.ChallengerLastName, &outboundBout.Style, &outboundBout.ChallengerScore, &outboundBout.AcceptorId, &outboundBout.AcceptorFirstName, &outboundBout.AcceptorLastName, &outboundBout.AcceptorScore, &outboundBout.RefereeId, &outboundBout.RefereeFirstName, &outboundBout.RefereeLastName)
+		err = dbconn.QueryRow(sqlOutboundBout, bout.BoutId).Scan(&outboundBout.BoutId, &outboundBout.ChallengerId, &outboundBout.ChallengerFirstName, &outboundBout.ChallengerLastName, &outboundBout.Style, &outboundBout.ChallengerScore, &outboundBout.AcceptorId, &outboundBout.AcceptorFirstName, &outboundBout.AcceptorLastName, &outboundBout.AcceptorScore, &outboundBout.RefereeId, &outboundBout.RefereeFirstName, &outboundBout.RefereeLastName, &outboundBout.StyleId)
 		// rows, err = dbconn.Queryx(sqlOutboundBout, bout.BoutId).Scan(&outboundBout)
 		if err != nil {
 			http.Error(w, err.Error(), 400)
@@ -266,6 +268,7 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
     c.first_name AS "challengerFirstName",
     c.last_name AS "challengerLastName",
     s.style_name AS "style",
+	s.style_id AS "styleId",
     cs.score AS "challengerScore",
     b.acceptor_id AS "acceptorId",
     a.first_name AS "acceptorFirstName",
@@ -289,7 +292,7 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 	JOIN 
 		style s ON b.style_id = s.style_id
 	WHERE 
-		b.accepted = false and b.challenger_id = $1 or b.acceptor_id = $1`
+		b.accepted = false and b.cancelled = false and b.completed = false and (b.challenger_id = $1 or b.acceptor_id = $1)`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
@@ -317,14 +320,44 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 
 func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var bouts = models.GetBouts()
+	var bouts []OutboundBout
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	sqlStmt := `SELECT * FROM bout where completed = false and (challenger_id = $1 or acceptor_id = $1 or referee_id = $1)`
+	sqlStmt := `SELECT 
+    b.bout_id AS "boutId",
+    b.challenger_id AS "challengerId",
+    c.first_name AS "challengerFirstName",
+    c.last_name AS "challengerLastName",
+    s.style_name AS "style",
+	s.style_id AS "styleId",
+    cs.score AS "challengerScore",
+    b.acceptor_id AS "acceptorId",
+    a.first_name AS "acceptorFirstName",
+    a.last_name AS "acceptorLastName",
+    ascore.score AS "acceptorScore",
+    r.athlete_id AS "refereeId",
+    r.first_name AS "refereeFirstName",
+    r.last_name AS "refereeLastName"
+	FROM 
+		bout b
+	JOIN 
+		athlete c ON b.challenger_id = c.athlete_id
+	JOIN 
+		athlete a ON b.acceptor_id = a.athlete_id
+	JOIN 
+		athlete_score cs ON b.challenger_id = cs.athlete_id AND b.style_id = cs.style_id
+	JOIN 
+		athlete_score ascore ON b.acceptor_id = ascore.athlete_id AND b.style_id = ascore.style_id
+	JOIN 
+		athlete r ON b.referee_id = r.athlete_id
+	JOIN 
+		style s ON b.style_id = s.style_id
+	WHERE 
+		b.accepted = true and b.cancelled = false and b.completed = false and (challenger_id = $1 or acceptor_id = $1 or referee_id = $1)`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
-		var tempBout = models.GetBout()
+		var tempBout OutboundBout
 
 		for rows.Next() {
 			err = rows.StructScan(&tempBout)
@@ -350,7 +383,7 @@ func CancelBout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	boutId := vars["bout_id"]
-	athleteId := vars["athlete_id"]
+	athleteId := vars["challenger_id"]
 	var athleteIdReturned string
 	sqlStmt := `SELECT challenger_id FROM bout WHERE bout_id = $1`
 

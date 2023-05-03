@@ -77,9 +77,11 @@ CREATE TABLE outcome (
     bout_id int UNIQUE,
     winner_id int,
     loser_id int,
+    style_id int, 
     is_draw boolean,
     CONSTRAINT FK_winner_id FOREIGN KEY (winner_id) REFERENCES athlete(athlete_id),
     CONSTRAINT FK_loser_id FOREIGN KEY (loser_id) REFERENCES athlete(athlete_id),
+    CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id),
     CONSTRAINT FK_bout_id FOREIGN KEY (bout_id) REFERENCES bout(bout_id));
 
 

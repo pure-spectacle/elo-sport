@@ -5,6 +5,7 @@ type Outcome struct {
 	BoutId    int  `json:"boutId" db:"bout_id"`
 	WinnerId  int  `json:"winnerId" db:"winner_id"`
 	LoserId   int  `json:"loserId" db:"loser_id"`
+	StyleId   int  `json:"styleId" db:"style_id"`
 	IsDraw    bool `json:"isDraw" db:"is_draw"`
 }
 

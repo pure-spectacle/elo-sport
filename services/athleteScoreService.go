@@ -112,34 +112,32 @@ func GetAthleteScoreByStyle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *AthleteScoreService) GetAthleteScoreById(id int) ([]models.AthleteScore, error) {
-	var athleteScores = models.GetAthleteScores()
-	var tempAthleteScore = models.GetAthleteScore()
-	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1`
-	rows, err := dbconn.Queryx(sqlStmt, id)
+func (a *AthleteScoreService) GetAthleteScoreById(athleteId, styleId int) (models.AthleteScore, error) {
+	var athleteScore = models.GetAthleteScore()
+	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
+	rows, err := dbconn.Queryx(sqlStmt, athleteId, styleId)
 	log.Println("err: ", err)
 	if err == nil {
 		for rows.Next() {
-			err = rows.StructScan(&tempAthleteScore)
-			log.Println("athlete: ", tempAthleteScore)
-			athleteScores = append(athleteScores, tempAthleteScore)
+			err = rows.StructScan(&athleteScore)
+			log.Println("athlete: ", athleteScore)
 		}
 		switch err {
 		case sql.ErrNoRows:
 			{
 				log.Println("no rows returns.")
-				return athleteScores, err
+				return athleteScore, err
 			}
 		case nil:
 			// json.NewEncoder(w).Encode(&athleteScores)
 			log.Println("Retrieve athlete score successfully.")
-			return athleteScores, nil
+			return athleteScore, nil
 		default:
 			// http.Error(w, err.Error(), 400)
 			log.Println("Retrieve athlete score failed.")
 		}
 	}
-	return athleteScores, err
+	return athleteScore, err
 }
 
 func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool) {
