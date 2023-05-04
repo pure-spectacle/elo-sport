@@ -11,39 +11,6 @@ import (
 	// "github.com/jmoiron/sqlx"
 )
 
-// type OutboundBout struct {
-// 	BoutId              int    `json:"boutId"`
-// 	ChallengerId        int    `json:"challengerId"`
-// 	ChallengerFirstName string `json:"challengerFirstName"`
-// 	ChallengerLastName  string `json:"challengerLastName"`
-// 	Style               string `json:"style"`
-// 	ChallengerScore     int    `json:"challengerScore"`
-// 	AcceptorId          int    `json:"acceptorId"`
-// 	AcceptorFirstName   string `json:"acceptorFirstName"`
-// 	AcceptorLastName    string `json:"acceptorLastName"`
-// 	AcceptorScore       int    `json:"acceptorScore"`
-// 	RefereeId           int    `json:"refereeId"`
-// 	RefereeFirstName    string `json:"refereeFirstName"`
-// 	RefereeLastName     string `json:"refereeLastName"`
-// }
-
-type OutboundBout struct {
-	BoutId              int    `json:"boutId" db:"boutId"`
-	ChallengerId        int    `json:"challengerId" db:"challengerId"`
-	ChallengerFirstName string `json:"challengerFirstName" db:"challengerFirstName"`
-	ChallengerLastName  string `json:"challengerLastName" db:"challengerLastName"`
-	Style               string `json:"style" db:"style"`
-	StyleId             int    `json:"styleId" db:"styleId"`
-	ChallengerScore     int    `json:"challengerScore" db:"challengerScore"`
-	AcceptorId          int    `json:"acceptorId" db:"acceptorId"`
-	AcceptorFirstName   string `json:"acceptorFirstName" db:"acceptorFirstName"`
-	AcceptorLastName    string `json:"acceptorLastName" db:"acceptorLastName"`
-	AcceptorScore       int    `json:"acceptorScore" db:"acceptorScore"`
-	RefereeId           int    `json:"refereeId" db:"refereeId"`
-	RefereeFirstName    string `json:"refereeFirstName" db:"refereeFirstName"`
-	RefereeLastName     string `json:"refereeLastName" db:"refereeLastName"`
-}
-
 func GetAllBouts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -153,7 +120,7 @@ func CreateBout(w http.ResponseWriter, r *http.Request) {
 			WHERE 
 				b.bout_id = $1;
 		`
-		var outboundBout OutboundBout
+		var outboundBout models.OutboundBout
 		err = dbconn.QueryRow(sqlOutboundBout, bout.BoutId).Scan(&outboundBout.BoutId, &outboundBout.ChallengerId, &outboundBout.ChallengerFirstName, &outboundBout.ChallengerLastName, &outboundBout.Style, &outboundBout.ChallengerScore, &outboundBout.AcceptorId, &outboundBout.AcceptorFirstName, &outboundBout.AcceptorLastName, &outboundBout.AcceptorScore, &outboundBout.RefereeId, &outboundBout.RefereeFirstName, &outboundBout.RefereeLastName, &outboundBout.StyleId)
 		// rows, err = dbconn.Queryx(sqlOutboundBout, bout.BoutId).Scan(&outboundBout)
 		if err != nil {
@@ -259,7 +226,7 @@ func CompleteBout(w http.ResponseWriter, r *http.Request) {
 
 func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var bouts []OutboundBout
+	var bouts []models.OutboundBout
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 	sqlStmt := `SELECT 
@@ -296,7 +263,7 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
-		var tempBout OutboundBout
+		var tempBout models.OutboundBout
 
 		for rows.Next() {
 			err = rows.StructScan(&tempBout)
@@ -320,7 +287,7 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 
 func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var bouts []OutboundBout
+	var bouts []models.OutboundBout
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 	sqlStmt := `SELECT 
@@ -357,7 +324,7 @@ func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
-		var tempBout OutboundBout
+		var tempBout models.OutboundBout
 
 		for rows.Next() {
 			err = rows.StructScan(&tempBout)

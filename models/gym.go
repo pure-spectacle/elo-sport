@@ -11,6 +11,8 @@ type Gym struct {
 	Email 		string `json:"email" db:"gym_email"`
 	Website 	string `json:"website" db:"gym_website"`
 	Description string `json:"description" db:"gym_description"`
+	CreatedDate string `json:"createdDate" db:"created_dt"`
+	UpdatedDate string `json:"updatedDate" db:"updated_dt"`
 }
 
 func GetGym() Gym {

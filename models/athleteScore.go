@@ -4,6 +4,8 @@ type AthleteScore struct {
 	AthleteId int 		`json:"athleteId" db:"athlete_id"`
 	StyleId   int 		`json:"styleId" db:"style_id"`
 	Score     float64 	`json:"score" db:"score"`
+	CreatedDate string `json:"createdDate" db:"created_dt"`
+	UpdatedDate string `json:"updatedDate" db:"updated_dt"`
 }
 
 func GetAthleteScore() AthleteScore {

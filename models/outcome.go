@@ -7,6 +7,8 @@ type Outcome struct {
 	LoserId   int  `json:"loserId" db:"loser_id"`
 	StyleId   int  `json:"styleId" db:"style_id"`
 	IsDraw    bool `json:"isDraw" db:"is_draw"`
+	CreatedDate string `json:"createdDate" db:"created_dt"`
+	UpdatedDate string `json:"updatedDate" db:"updated_dt"`
 }
 
 func GetOutcome() Outcome {

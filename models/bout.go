@@ -11,6 +11,8 @@ type Bout struct {
 	Deleted      bool `json:"deleted" db:"deleted"`
 	Cancelled    bool `json:"cancelled" db:"cancelled"`
 	Points       int  `json:"points" db:"points"`
+	CreatedDate string `json:"createdDate" db:"created_dt"`
+	UpdatedDate string `json:"updatedDate" db:"updated_dt"`
 }
 
 func GetBout() Bout {

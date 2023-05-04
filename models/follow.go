@@ -1,8 +1,10 @@
 package models
 
 type Follow struct {
-	FollowerId  int `json:"followerId" db:"follower_id"`
-	FollowingId int `json:"followingId" db:"following_id"`
+	FollowerId int `json:"followerId" db:"follower_id"`
+	FollowedId int `json:"followedId" db:"followed_id"`
+	CreatedDate string `json:"createdDate" db:"created_dt"`
+	UpdatedDate string `json:"updatedDate" db:"updated_dt"`
 }
 
 func GetFollow() Follow {

@@ -29,10 +29,9 @@ func GetAllAthleteScoresByAthleteId(w http.ResponseWriter, r *http.Request) {
 
 	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1`
 	rows, err := dbconn.Queryx(sqlStmt, id)
-
 	if err == nil {
+		defer rows.Close()
 		var tempAthleteScore = models.GetAthleteScore()
-
 		for rows.Next() {
 			err = rows.StructScan(&tempAthleteScore)
 			athleteScores = append(athleteScores, tempAthleteScore)
@@ -64,6 +63,7 @@ func GetAthleteScore(w http.ResponseWriter, r *http.Request) {
 	where a.athlete_id = $1`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 	if err == nil {
+		defer rows.Close()
 		for rows.Next() {
 			err = rows.StructScan(&tempAthleteScore)
 			athleteScores = append(athleteScores, tempAthleteScore)
@@ -93,6 +93,7 @@ func GetAthleteScoreByStyle(w http.ResponseWriter, r *http.Request) {
 	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
 	rows, err := dbconn.Queryx(sqlStmt, id, style)
 	if err == nil {
+		defer rows.Close()
 		for rows.Next() {
 			err = rows.StructScan(&tempAthleteScore)
 			athleteScores = append(athleteScores, tempAthleteScore)
@@ -116,8 +117,8 @@ func (a *AthleteScoreService) GetAthleteScoreById(athleteId, styleId int) (model
 	var athleteScore = models.GetAthleteScore()
 	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
 	rows, err := dbconn.Queryx(sqlStmt, athleteId, styleId)
-	log.Println("err: ", err)
 	if err == nil {
+		defer rows.Close()
 		for rows.Next() {
 			err = rows.StructScan(&athleteScore)
 			log.Println("athlete: ", athleteScore)
@@ -151,6 +152,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore, isD
 
 	winnerUpdatedScore, loserUpdatedScore := CalculateScore(winnerScore, loserScore, isDraw)
 	if winErr == nil {
+		defer winnerRows.Close()
 		for winnerRows.Next() {
 			winErr = winnerRows.StructScan(&athleteScore)
 		}
@@ -177,6 +179,7 @@ func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore, isD
 		}
 	}
 	if losErr == nil {
+		defer loserRows.Close()
 		for loserRows.Next() {
 			losErr = loserRows.StructScan(&athleteScore)
 		}

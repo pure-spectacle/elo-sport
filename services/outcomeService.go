@@ -197,9 +197,33 @@ func (o *OutcomeService) insertOutcomeAndUpdateAthleteScores(outcome *models.Out
 		if err != nil {
 			return err
 		}
+
+		sqlStmt = `UPDATE athlete_record SET wins = wins + 1 WHERE athlete_id = $1`
+		_, err = dbconn.Exec(sqlStmt, outcome.WinnerId)
+		if err != nil {
+			return err
+		}
+
+		sqlStmt = `UPDATE athlete_record SET losses = losses + 1 WHERE athlete_id = $1`
+		_, err = dbconn.Exec(sqlStmt, outcome.LoserId)
+		if err != nil {
+			return err
+		}
 	} else {
 		sqlStmt = `INSERT INTO outcome (bout_id, winner_id, loser_id, is_draw, style_id) VALUES ($1, null, null, true, $2) RETURNING outcome_id`
 		err := dbconn.QueryRowx(sqlStmt, boutId, outcome.StyleId).StructScan(outcome)
+		if err != nil {
+			return err
+		}
+
+		sqlStmt = `UPDATE athlete_record SET draws = draws + 1 WHERE athlete_id = $1`
+		_, err = dbconn.Exec(sqlStmt, outcome.WinnerId)
+		if err != nil {
+			return err
+		}
+
+		sqlStmt = `UPDATE athlete_record SET draws = draws + 1 WHERE athlete_id = $1`
+		_, err = dbconn.Exec(sqlStmt, outcome.LoserId)
 		if err != nil {
 			return err
 		}

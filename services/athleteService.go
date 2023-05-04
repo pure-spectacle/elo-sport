@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"ronin/models"
 
-	// "strconv"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
@@ -21,18 +21,8 @@ type AthleteUsername struct {
 	Username string `json:"username" db:"username"`
 }
 
-// type AthleteStyleScore struct {
-// 	AthleteId int    `json:"athlete_id" db:"athlete_id"`
-// 	StyleName string `json:"styleName" db:"style_name"`
-// 	Score     string `json:"score" db:"score"`
-// 	//Add draws
-// }
-
-type AthleteRecord struct {
-	AthleteId int `json:"athlete_id" db:"athlete_id"`
-	Wins      int `json:"wins" db:"wins"`
-	Losses    int `json:"losses" db:"losses"`
-	Draws     int `json:"draws" db:"draws"`
+type AthleteId struct {
+	AthleteId int `json:"athleteId" db:"athlete_id"`
 }
 
 func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {
@@ -177,10 +167,6 @@ func IsAuthorizedUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type AthleteId struct {
-	AthleteId int `json:"athleteId" db:"athlete_id"`
-}
-
 func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var athlete models.Athlete
@@ -257,7 +243,7 @@ func DeleteAthlete(w http.ResponseWriter, r *http.Request) {
 
 func GetAthleteRecord(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var record AthleteRecord
+	var record models.AthleteRecord
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 	sqlStmt := `SELECT * FROM athlete_record where athlete_id = $1`
@@ -285,8 +271,8 @@ func FollowAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	sqlStatement := `INSERT INTO following (follower_id, following_id) VALUES ($1, $2)`
-	_, err = dbconn.Queryx(sqlStatement, follow.FollowerId, follow.FollowingId)
+	sqlStatement := `INSERT INTO following (follower_id, followed_id) VALUES ($1, $2)`
+	_, err = dbconn.Queryx(sqlStatement, follow.FollowerId, follow.FollowedId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -298,41 +284,50 @@ func FollowAthlete(w http.ResponseWriter, r *http.Request) {
 
 func UnfollowAthlete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var follow models.Follow
-	err := json.NewDecoder(r.Body).Decode(&follow)
+	vars := mux.Vars(r)
+
+	followerId, err := strconv.Atoi(vars["followerId"])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid followerId", http.StatusBadRequest)
 		return
 	}
-	sqlStatement := `DELETE FROM following WHERE follower_id = $1 AND following_id = $2`
-	_, err = dbconn.Queryx(sqlStatement, follow.FollowerId, follow.FollowingId)
+	followedId, err := strconv.Atoi(vars["followedId"])
+	if err != nil {
+		http.Error(w, "Invalid followedId", http.StatusBadRequest)
+		return
+	}
+	sqlStatement := `DELETE FROM following WHERE follower_id = $1 AND followed_id = $2`
+	_, err = dbconn.Exec(sqlStatement, followerId, followedId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "Athlete unfollowed successfully")
 }
 
-func GetFollowers(w http.ResponseWriter, r *http.Request) {
+func GetAthletesFollowed(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var follows = models.GetFollows()
+	var follows []int
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 	var tempFollow = models.GetFollow()
-	sqlStmt := `SELECT * FROM following where following_id = $1`
+	sqlStmt := `SELECT * FROM following where follower_id = $1`
 	rows, err := dbconn.Queryx(sqlStmt, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
 	for rows.Next() {
 		err2 := rows.StructScan(&tempFollow)
-		follows = append(follows, tempFollow)
 		if err2 != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err2.Error(), http.StatusBadRequest)
 			return
-
 		}
-		json.NewEncoder(w).Encode(&follows)
+		follows = append(follows, tempFollow.FollowedId)
 	}
+
+	json.NewEncoder(w).Encode(follows)
 }
 
 func SetDB(db *sqlx.DB) {

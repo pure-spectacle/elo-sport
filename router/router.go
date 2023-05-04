@@ -19,8 +19,8 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc(base_url+"/athlete/{athlete_id}/record", services.GetAthleteRecord).Methods("GET")
 	router.HandleFunc(base_url+"/athlete/authorize", services.IsAuthorizedUser).Methods("POST")
 	router.HandleFunc(base_url+"/athletes/follow", services.FollowAthlete).Methods("POST")
-	router.HandleFunc(base_url+"/athletes/unfollow", services.UnfollowAthlete).Methods("DELETE")
-	router.HandleFunc(base_url+"/athletes/following/{athlete_id}", services.GetFollowingAthletes).Methods("GET")
+	router.HandleFunc(base_url+"/athletes/{followerId}/{followedId}/unfollow", services.UnfollowAthlete).Methods("DELETE")
+	router.HandleFunc(base_url+"/athletes/following/{athlete_id}", services.GetAthletesFollowed).Methods("GET")
 
 
 	router.HandleFunc(base_url+"/bouts", services.GetAllBouts).Methods("GET")
