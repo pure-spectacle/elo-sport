@@ -114,6 +114,13 @@ CREATE TABLE referee_style (
 	CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES referee(referee_id),
     CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id));
 
+CREATE TABLE following (
+	follower_id int NOT NULL,
+	followed_id int NOT NULL,
+	CONSTRAINT FK_follower_id FOREIGN KEY (follower_id) REFERENCES athlete(athlete_id),
+	CONSTRAINT FK_followed_id FOREIGN KEY (followed_id) REFERENCES athlete(athlete_id)
+);
+
 
 --rollback
 COMMIT;

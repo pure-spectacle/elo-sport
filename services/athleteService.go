@@ -277,6 +277,64 @@ func GetAthleteRecord(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func FollowAthlete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var follow models.Follow
+	err := json.NewDecoder(r.Body).Decode(&follow)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sqlStatement := `INSERT INTO following (follower_id, following_id) VALUES ($1, $2)`
+	_, err = dbconn.Queryx(sqlStatement, follow.FollowerId, follow.FollowingId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Athlete followed successfully")
+}
+
+func UnfollowAthlete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var follow models.Follow
+	err := json.NewDecoder(r.Body).Decode(&follow)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sqlStatement := `DELETE FROM following WHERE follower_id = $1 AND following_id = $2`
+	_, err = dbconn.Queryx(sqlStatement, follow.FollowerId, follow.FollowingId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Athlete unfollowed successfully")
+}
+
+func GetFollowers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var follows = models.GetFollows()
+	vars := mux.Vars(r)
+	id := vars["athlete_id"]
+	var tempFollow = models.GetFollow()
+	sqlStmt := `SELECT * FROM following where following_id = $1`
+	rows, err := dbconn.Queryx(sqlStmt, id)
+	for rows.Next() {
+		err2 := rows.StructScan(&tempFollow)
+		follows = append(follows, tempFollow)
+		if err2 != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+
+		}
+		json.NewEncoder(w).Encode(&follows)
+	}
+}
+
 func SetDB(db *sqlx.DB) {
 	dbconn = db
 }
