@@ -268,7 +268,7 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 	JOIN 
 		style s ON b.style_id = s.style_id
 	WHERE 
-		b.accepted = false AND b.cancelled = false AND b.completed = false AND (b.challenger_id = $1 OR b.acceptor_id = $1)`
+		b.accepted = false AND b.cancelled = false AND b.completed = false AND (b.challenger_id = $1 OR b.acceptor_id = $1 OR b.referee_id = 6)`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
@@ -338,7 +338,7 @@ func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
 	JOIN 
 		style s ON b.style_id = s.style_id
 	WHERE 
-		b.accepted = true AND b.cancelled = false AND b.completed = false AND (b.challenger_id = $1 OR b.acceptor_id = $1)`
+		b.accepted = true AND b.cancelled = false AND b.completed = false AND (b.challenger_id = $1 OR b.acceptor_id = $1 OR b.referee_id = $1)`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
