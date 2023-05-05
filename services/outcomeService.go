@@ -102,7 +102,7 @@ func (o *OutcomeService) CreateOutcome(w http.ResponseWriter, r *http.Request) {
 		loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId, outcome.StyleId)
 		winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId, outcome.StyleId)
 
-		UpdateOrCreateAthleteScore(winnerScore, loserScore, outcome.IsDraw)
+		CreateAthleteScore(winnerScore, loserScore, outcome.IsDraw)
 
 		if winnerErr == nil && loserErr == nil {
 			json.NewEncoder(w).Encode(&outcome)
@@ -241,6 +241,6 @@ func (o *OutcomeService) insertOutcomeAndUpdateAthleteScores(outcome *models.Out
 		return errors.New("Error fetching athlete scores")
 	}
 
-	UpdateOrCreateAthleteScore(winnerScore, loserScore, outcome.IsDraw)
+	CreateAthleteScore(winnerScore, loserScore, outcome.IsDraw)
 	return nil
 }

@@ -16,15 +16,15 @@ CREATE TABLE gym (
     created_dt timestamp NOT NULL DEFAULT now(),
     updated_dt timestamp NOT NULL DEFAULT now());
 
-CREATE TABLE referee (
-    referee_id serial PRIMARY KEY,
-    gym_id int, 
-    style_id int, 
-    first_name varchar,
-    last_name varchar,
-    created_dt timestamp NOT NULL DEFAULT now(),
-    updated_dt timestamp NOT NULL DEFAULT now(),
-    CONSTRAINT FK_gym_id FOREIGN KEY (gym_id) REFERENCES gym(gym_id));
+-- CREATE TABLE referee (
+--     referee_id serial PRIMARY KEY,
+--     gym_id int, 
+--     style_id int, 
+--     first_name varchar,
+--     last_name varchar,
+--     created_dt timestamp NOT NULL DEFAULT now(),
+--     updated_dt timestamp NOT NULL DEFAULT now(),
+--     CONSTRAINT FK_gym_id FOREIGN KEY (gym_id) REFERENCES gym(gym_id));
 
 CREATE TABLE style (
 	style_id serial PRIMARY KEY,
@@ -112,33 +112,33 @@ CREATE TABLE athlete_style (
     CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id),
     CONSTRAINT unique_athlete_style UNIQUE (athlete_id, style_id));
 	
-CREATE TABLE competition (
-	competition_id serial PRIMARY KEY,
-    referee_id int,
-    bout_id int,
-    outcome_id int,
-    created_dt timestamp NOT NULL DEFAULT now(),
-    updated_dt timestamp NOT NULL DEFAULT now(),
-    CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES referee(referee_id),
-	CONSTRAINT FK_bout_id FOREIGN KEY (bout_id) REFERENCES bout(bout_id),
-    CONSTRAINT FK_outcome_id FOREIGN KEY (outcome_id) REFERENCES outcome(outcome_id));
+-- CREATE TABLE competition (
+-- 	competition_id serial PRIMARY KEY,
+--     referee_id int,
+--     bout_id int,
+--     outcome_id int,
+--     created_dt timestamp NOT NULL DEFAULT now(),
+--     updated_dt timestamp NOT NULL DEFAULT now(),
+--     CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES referee(referee_id),
+-- 	CONSTRAINT FK_bout_id FOREIGN KEY (bout_id) REFERENCES bout(bout_id),
+--     CONSTRAINT FK_outcome_id FOREIGN KEY (outcome_id) REFERENCES outcome(outcome_id));
 
-CREATE TABLE athlete_competition (
-    athlete_id int,
-    competition_id int,
-    created_dt timestamp NOT NULL DEFAULT now(),
-    updated_dt timestamp NOT NULL DEFAULT now(),
-	CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id),
-    CONSTRAINT FK_competition_id FOREIGN KEY (competition_id) REFERENCES competition(competition_id));
+-- CREATE TABLE athlete_competition (
+--     athlete_id int,
+--     competition_id int,
+--     created_dt timestamp NOT NULL DEFAULT now(),
+--     updated_dt timestamp NOT NULL DEFAULT now(),
+-- 	CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id),
+--     CONSTRAINT FK_competition_id FOREIGN KEY (competition_id) REFERENCES competition(competition_id));
 	
 
-CREATE TABLE referee_style (
-    referee_id int,
-    style_id int,
-    created_dt timestamp NOT NULL DEFAULT now(),
-    updated_dt timestamp NOT NULL DEFAULT now(),
-	CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES referee(referee_id),
-    CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id));
+-- CREATE TABLE referee_style (
+--     referee_id int,
+--     style_id int,
+--     created_dt timestamp NOT NULL DEFAULT now(),
+--     updated_dt timestamp NOT NULL DEFAULT now(),
+-- 	CONSTRAINT FK_referee_id FOREIGN KEY (referee_id) REFERENCES referee(referee_id),
+--     CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id));
 
 CREATE TABLE following (
 	follower_id int NOT NULL,
@@ -172,10 +172,10 @@ CREATE TRIGGER update_athlete_updated_dt
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_dt_column();
 	
-CREATE TRIGGER update_referee_updated_dt
-    BEFORE UPDATE ON referee
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_dt_column();
+-- CREATE TRIGGER update_referee_updated_dt
+--     BEFORE UPDATE ON referee
+--     FOR EACH ROW
+--     EXECUTE FUNCTION update_updated_dt_column();
 	
 CREATE TRIGGER update_athlete_record_updated_dt
     BEFORE UPDATE ON athlete_record
@@ -207,20 +207,20 @@ CREATE TRIGGER update_athlete_style_updated_dt
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_dt_column();
 	
-CREATE TRIGGER update_athlete_competition_updated_dt
-    BEFORE UPDATE ON athlete_competition
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_dt_column();
+-- CREATE TRIGGER update_athlete_competition_updated_dt
+--     BEFORE UPDATE ON athlete_competition
+--     FOR EACH ROW
+--     EXECUTE FUNCTION update_updated_dt_column();
 
-CREATE TRIGGER update_competition_updated_dt
-    BEFORE UPDATE ON competition
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_dt_column();
+-- CREATE TRIGGER update_competition_updated_dt
+--     BEFORE UPDATE ON competition
+--     FOR EACH ROW
+--     EXECUTE FUNCTION update_updated_dt_column();
 	
-CREATE TRIGGER update_referee_style_updated_dt
-    BEFORE UPDATE ON referee_style
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_dt_column();
+-- CREATE TRIGGER update_referee_style_updated_dt
+--     BEFORE UPDATE ON referee_style
+--     FOR EACH ROW
+--     EXECUTE FUNCTION update_updated_dt_column();
 	
 CREATE TRIGGER update_following_updated_dt
     BEFORE UPDATE ON following

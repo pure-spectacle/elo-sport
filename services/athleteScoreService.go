@@ -58,9 +58,15 @@ func GetAthleteScore(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 	var tempAthleteScore AthleteStyleScore
-	sqlStmt := `SELECT a.score, s.style_name FROM athlete_score as a
-	join style as s on s.style_id = a.style_id
-	where a.athlete_id = $1`
+	sqlStmt := `SELECT a.score, s.style_name
+	FROM athlete_score AS a
+	JOIN style AS s ON s.style_id = a.style_id
+	JOIN (
+		SELECT athlete_id, style_id, MAX(updated_dt) AS max_updated_dt
+		FROM athlete_score
+		GROUP BY athlete_id, style_id
+	) AS max_dt ON max_dt.athlete_id = a.athlete_id AND max_dt.style_id = a.style_id AND max_dt.max_updated_dt = a.updated_dt
+	WHERE a.athlete_id = $1`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 	if err == nil {
 		defer rows.Close()
@@ -90,7 +96,27 @@ func GetAthleteScoreByStyle(w http.ResponseWriter, r *http.Request) {
 	id := vars["athlete_id"]
 	style := vars["style_id"]
 	var tempAthleteScore = models.GetAthleteScore()
-	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
+	sqlStmt := `WITH ranked_scores AS (
+		SELECT
+			athlete_id,
+			style_id,
+			score,
+			updated_dt,
+			ROW_NUMBER() OVER (PARTITION BY athlete_id, style_id ORDER BY updated_dt DESC) AS rank
+		FROM
+			athlete_score
+		WHERE
+			athlete_id = $1 AND style_id = $2
+	)
+	SELECT
+		athlete_id,
+		style_id,
+		score,
+		updated_dt
+	FROM
+		ranked_scores
+	WHERE
+		rank = 1`
 	rows, err := dbconn.Queryx(sqlStmt, id, style)
 	if err == nil {
 		defer rows.Close()
@@ -115,7 +141,27 @@ func GetAthleteScoreByStyle(w http.ResponseWriter, r *http.Request) {
 
 func (a *AthleteScoreService) GetAthleteScoreById(athleteId, styleId int) (models.AthleteScore, error) {
 	var athleteScore = models.GetAthleteScore()
-	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
+	sqlStmt := `WITH ranked_scores AS (
+		SELECT
+			athlete_id,
+			style_id,
+			score,
+			updated_dt,
+			ROW_NUMBER() OVER (PARTITION BY athlete_id, style_id ORDER BY updated_dt DESC) AS rank
+		FROM
+			athlete_score
+		WHERE
+			athlete_id = $1 AND style_id = $2
+	)
+	SELECT
+		athlete_id,
+		style_id,
+		score,
+		updated_dt
+	FROM
+		ranked_scores
+	WHERE
+		rank = 1`
 	rows, err := dbconn.Queryx(sqlStmt, athleteId, styleId)
 	if err == nil {
 		defer rows.Close()
@@ -141,70 +187,23 @@ func (a *AthleteScoreService) GetAthleteScoreById(athleteId, styleId int) (model
 	return athleteScore, err
 }
 
-func UpdateOrCreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool) {
-	// w.Header().Set("Content-Type", "application/json")
-	// vars := mux.Vars(r)
-	// athleteId := vars["athlete_id"]
-	var athleteScore = models.GetAthleteScore()
-	sqlStmt := `SELECT * FROM athlete_score where athlete_id = $1 and style_id = $2`
-	winnerRows, winErr := dbconn.Queryx(sqlStmt, winnerScore.AthleteId, winnerScore.StyleId)
-	loserRows, losErr := dbconn.Queryx(sqlStmt, loserScore.AthleteId, loserScore.StyleId)
-
+func CreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool) {
 	winnerUpdatedScore, loserUpdatedScore := CalculateScore(winnerScore, loserScore, isDraw)
-	if winErr == nil {
-		defer winnerRows.Close()
-		for winnerRows.Next() {
-			winErr = winnerRows.StructScan(&athleteScore)
-		}
 
-		switch winErr {
-		case sql.ErrNoRows:
-			{
-				sqlStmt := `INSERT INTO athlete_score (athlete_id, style_id, score) VALUES ($1, $2, $3)`
-				_, err := dbconn.Exec(sqlStmt, winnerScore.AthleteId, winnerScore.StyleId, winnerUpdatedScore)
-				if err != nil {
-					log.Println("Insert winner athlete score failed.")
-					return
-				}
-			}
-		case nil:
-			sqlStmt := `UPDATE athlete_score SET score = $1 WHERE athlete_id = $2 and style_id = $3`
-			_, err := dbconn.Exec(sqlStmt, winnerUpdatedScore, winnerScore.AthleteId, winnerScore.StyleId)
-			if err != nil {
-				log.Println("Update winner athlete score failed.")
-				return
-			}
-		default:
-			return
-		}
+	sqlStmt := `INSERT INTO athlete_score (score, athlete_id, style_id) VALUES ($1, $2, $3)`
+	_, err := dbconn.Exec(sqlStmt, winnerUpdatedScore, winnerScore.AthleteId, winnerScore.StyleId)
+	if err != nil {
+		log.Println("Update winner athlete score failed.")
+		return
 	}
-	if losErr == nil {
-		defer loserRows.Close()
-		for loserRows.Next() {
-			losErr = loserRows.StructScan(&athleteScore)
-		}
 
-		switch losErr {
-		case sql.ErrNoRows:
-			{
-				sqlStmt := `INSERT INTO athlete_score (athlete_id, style_id, score) VALUES ($1, $2, $3)`
-				_, err := dbconn.Exec(sqlStmt, loserScore.AthleteId, loserScore.StyleId, loserUpdatedScore)
-				if err != nil {
-					log.Println("Insert loser athlete score failed.")
-					return
-				}
-			}
-		case nil:
-			sqlStmt := `UPDATE athlete_score SET score = $1 WHERE athlete_id = $2 and style_id = $3`
-			_, err := dbconn.Exec(sqlStmt, loserUpdatedScore, loserScore.AthleteId, loserScore.StyleId)
-			if err != nil {
-				log.Println("Update loser athlete score failed.")
-				return
-			}
-		default:
-			return
-		}
+	sqlStmt = `INSERT INTO athlete_score (score, athlete_id, style_id) VALUES ($1, $2, $3)`
+	_, err = dbconn.Exec(sqlStmt, loserUpdatedScore, loserScore.AthleteId, loserScore.StyleId)
+	if err != nil {
+		log.Println("Update winner athlete score failed.")
+		return
 	}
+
 }
 
 func (a *AthleteScoreService) CreateAthleteScoreUponRegistration(athleteId, styleId int) error {

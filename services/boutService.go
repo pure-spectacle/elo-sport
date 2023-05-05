@@ -229,21 +229,30 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 	var bouts []models.OutboundBout
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	sqlStmt := `SELECT 
-    b.bout_id AS "boutId",
-    b.challenger_id AS "challengerId",
-    c.first_name AS "challengerFirstName",
-    c.last_name AS "challengerLastName",
-    s.style_name AS "style",
-	s.style_id AS "styleId",
-    cs.score AS "challengerScore",
-    b.acceptor_id AS "acceptorId",
-    a.first_name AS "acceptorFirstName",
-    a.last_name AS "acceptorLastName",
-    ascore.score AS "acceptorScore",
-    r.athlete_id AS "refereeId",
-    r.first_name AS "refereeFirstName",
-    r.last_name AS "refereeLastName"
+	sqlStmt := `WITH latest_scores AS (
+		SELECT 
+			athlete_id, 
+			style_id, 
+			score, 
+			updated_dt,
+			ROW_NUMBER() OVER (PARTITION BY athlete_id, style_id ORDER BY updated_dt DESC) as row_num
+		FROM athlete_score
+	)
+	SELECT 
+		b.bout_id AS "boutId",
+		b.challenger_id AS "challengerId",
+		c.first_name AS "challengerFirstName",
+		c.last_name AS "challengerLastName",
+		s.style_name AS "style",
+		s.style_id AS "styleId",
+		cs.score AS "challengerScore",
+		b.acceptor_id AS "acceptorId",
+		a.first_name AS "acceptorFirstName",
+		a.last_name AS "acceptorLastName",
+		ascore.score AS "acceptorScore",
+		r.athlete_id AS "refereeId",
+		r.first_name AS "refereeFirstName",
+		r.last_name AS "refereeLastName"
 	FROM 
 		bout b
 	JOIN 
@@ -251,15 +260,15 @@ func GetPendingBouts(w http.ResponseWriter, r *http.Request) {
 	JOIN 
 		athlete a ON b.acceptor_id = a.athlete_id
 	JOIN 
-		athlete_score cs ON b.challenger_id = cs.athlete_id AND b.style_id = cs.style_id
+		latest_scores cs ON b.challenger_id = cs.athlete_id AND b.style_id = cs.style_id AND cs.row_num = 1
 	JOIN 
-		athlete_score ascore ON b.acceptor_id = ascore.athlete_id AND b.style_id = ascore.style_id
+		latest_scores ascore ON b.acceptor_id = ascore.athlete_id AND b.style_id = ascore.style_id AND ascore.row_num = 1
 	JOIN 
 		athlete r ON b.referee_id = r.athlete_id
 	JOIN 
 		style s ON b.style_id = s.style_id
 	WHERE 
-		b.accepted = false and b.cancelled = false and b.completed = false and (b.challenger_id = $1 or b.acceptor_id = $1)`
+		b.accepted = false AND b.cancelled = false AND b.completed = false AND (b.challenger_id = $1 OR b.acceptor_id = $1)`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
@@ -290,21 +299,30 @@ func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
 	var bouts []models.OutboundBout
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	sqlStmt := `SELECT 
-    b.bout_id AS "boutId",
-    b.challenger_id AS "challengerId",
-    c.first_name AS "challengerFirstName",
-    c.last_name AS "challengerLastName",
-    s.style_name AS "style",
-	s.style_id AS "styleId",
-    cs.score AS "challengerScore",
-    b.acceptor_id AS "acceptorId",
-    a.first_name AS "acceptorFirstName",
-    a.last_name AS "acceptorLastName",
-    ascore.score AS "acceptorScore",
-    r.athlete_id AS "refereeId",
-    r.first_name AS "refereeFirstName",
-    r.last_name AS "refereeLastName"
+	sqlStmt := `WITH latest_scores AS (
+		SELECT 
+			athlete_id, 
+			style_id, 
+			score, 
+			updated_dt,
+			ROW_NUMBER() OVER (PARTITION BY athlete_id, style_id ORDER BY updated_dt DESC) as row_num
+		FROM athlete_score
+	)
+	SELECT 
+		b.bout_id AS "boutId",
+		b.challenger_id AS "challengerId",
+		c.first_name AS "challengerFirstName",
+		c.last_name AS "challengerLastName",
+		s.style_name AS "style",
+		s.style_id AS "styleId",
+		cs.score AS "challengerScore",
+		b.acceptor_id AS "acceptorId",
+		a.first_name AS "acceptorFirstName",
+		a.last_name AS "acceptorLastName",
+		ascore.score AS "acceptorScore",
+		r.athlete_id AS "refereeId",
+		r.first_name AS "refereeFirstName",
+		r.last_name AS "refereeLastName"
 	FROM 
 		bout b
 	JOIN 
@@ -312,15 +330,15 @@ func GetIncompleteBouts(w http.ResponseWriter, r *http.Request) {
 	JOIN 
 		athlete a ON b.acceptor_id = a.athlete_id
 	JOIN 
-		athlete_score cs ON b.challenger_id = cs.athlete_id AND b.style_id = cs.style_id
+		latest_scores cs ON b.challenger_id = cs.athlete_id AND b.style_id = cs.style_id AND cs.row_num = 1
 	JOIN 
-		athlete_score ascore ON b.acceptor_id = ascore.athlete_id AND b.style_id = ascore.style_id
+		latest_scores ascore ON b.acceptor_id = ascore.athlete_id AND b.style_id = ascore.style_id AND ascore.row_num = 1
 	JOIN 
 		athlete r ON b.referee_id = r.athlete_id
 	JOIN 
 		style s ON b.style_id = s.style_id
 	WHERE 
-		b.accepted = true and b.cancelled = false and b.completed = false and (challenger_id = $1 or acceptor_id = $1 or referee_id = $1)`
+		b.accepted = true AND b.cancelled = false AND b.completed = false AND (b.challenger_id = $1 OR b.acceptor_id = $1)`
 	rows, err := dbconn.Queryx(sqlStmt, id)
 
 	if err == nil {
