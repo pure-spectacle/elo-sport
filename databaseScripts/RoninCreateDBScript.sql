@@ -66,10 +66,12 @@ CREATE TABLE athlete_score (
     athlete_id serial,
     style_id int,
     score int,
+    bout_id int,
     created_dt timestamp NOT NULL DEFAULT now(),
     updated_dt timestamp NOT NULL DEFAULT now(),
     CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id),
-    CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id));
+    CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id)
+    CONSTRAINT FK_bout_id FOREIGN KEY (bout_id) REFERENCES bout(bout_id));
 	
 CREATE TABLE bout (
 	bout_id serial PRIMARY KEY,
