@@ -16,8 +16,8 @@ type Feed struct {
 	RefereeFirstName    string `json:"refereeFirstName" db:"refereeFirstName"`
 	RefereeLastName     string `json:"refereeLastName" db:"refereeLastName"`
 	Date                string `json:"date" db:"updatedDt"`
-	WinnerScore         int    `json:"winnerOldScore" db:"winnerScore"`
-	LoserScore          int    `json:"loserOldScore" db:"loserScore"`
+	WinnerScore         int    `json:"winnerScore" db:"winnerScore"`
+	LoserScore          int    `json:"loserScore" db:"loserScore"`
 	WinnerId            int    `json:"winnerId" db:"winnerId"`
 	WinnerWins          int    `json:"winnerWins" db:"winnerWins"`
 	WinnerLosses        int    `json:"winnerLosses" db:"winnerLosses"`
