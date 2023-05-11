@@ -62,17 +62,6 @@ CREATE TABLE athlete_gym (
     CONSTRAINT FK_gym_id FOREIGN KEY (gym_id) REFERENCES gym(gym_id),
     CONSTRAINT unique_athlete_gym UNIQUE (athlete_id, gym_id));
 	
-CREATE TABLE athlete_score (
-    athlete_id serial,
-    style_id int,
-    score int,
-    bout_id int,
-    created_dt timestamp NOT NULL DEFAULT now(),
-    updated_dt timestamp NOT NULL DEFAULT now(),
-    CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id),
-    CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id)
-    CONSTRAINT FK_bout_id FOREIGN KEY (bout_id) REFERENCES bout(bout_id));
-	
 CREATE TABLE bout (
 	bout_id serial PRIMARY KEY,
 	challenger_id int NOT NULL,
@@ -104,6 +93,17 @@ CREATE TABLE outcome (
     CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id),
     CONSTRAINT FK_bout_id FOREIGN KEY (bout_id) REFERENCES bout(bout_id));
 
+
+CREATE TABLE athlete_score (
+    athlete_id serial,
+    style_id int,
+    outcome_id int,
+    score int,
+    created_dt timestamp NOT NULL DEFAULT now(),
+    updated_dt timestamp NOT NULL DEFAULT now(),
+    CONSTRAINT FK_athlete_id FOREIGN KEY (athlete_id) REFERENCES athlete(athlete_id),
+    CONSTRAINT FK_style_id FOREIGN KEY (style_id) REFERENCES style(style_id)
+);
 
 CREATE TABLE athlete_style (
 	athlete_id int,

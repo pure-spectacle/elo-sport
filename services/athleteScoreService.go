@@ -102,6 +102,7 @@ func GetAthleteScoreByStyle(w http.ResponseWriter, r *http.Request) {
 			style_id,
 			score,
 			updated_dt,
+			outcome_id,
 			ROW_NUMBER() OVER (PARTITION BY athlete_id, style_id ORDER BY updated_dt DESC) AS rank
 		FROM
 			athlete_score
@@ -147,6 +148,7 @@ func (a *AthleteScoreService) GetAthleteScoreById(athleteId, styleId int) (model
 			style_id,
 			score,
 			updated_dt,
+			outcome_id,
 			ROW_NUMBER() OVER (PARTITION BY athlete_id, style_id ORDER BY updated_dt DESC) AS rank
 		FROM
 			athlete_score
@@ -187,18 +189,19 @@ func (a *AthleteScoreService) GetAthleteScoreById(athleteId, styleId int) (model
 	return athleteScore, err
 }
 
-func CreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool) {
+// TODO: need to add outcome_id here
+func CreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool, outcomeId int) {
 	winnerUpdatedScore, loserUpdatedScore := CalculateScore(winnerScore, loserScore, isDraw)
 
-	sqlStmt := `INSERT INTO athlete_score (score, athlete_id, style_id) VALUES ($1, $2, $3)`
-	_, err := dbconn.Exec(sqlStmt, winnerUpdatedScore, winnerScore.AthleteId, winnerScore.StyleId)
+	sqlStmt := `INSERT INTO athlete_score (score, athlete_id, style_id, outcome_id) VALUES ($1, $2, $3, $4)`
+	_, err := dbconn.Exec(sqlStmt, winnerUpdatedScore, winnerScore.AthleteId, winnerScore.StyleId, outcomeId)
 	if err != nil {
 		log.Println("Update winner athlete score failed.")
 		return
 	}
 
-	sqlStmt = `INSERT INTO athlete_score (score, athlete_id, style_id) VALUES ($1, $2, $3)`
-	_, err = dbconn.Exec(sqlStmt, loserUpdatedScore, loserScore.AthleteId, loserScore.StyleId)
+	sqlStmt = `INSERT INTO athlete_score (score, athlete_id, style_id, outcome_id) VALUES ($1, $2, $3, $4)`
+	_, err = dbconn.Exec(sqlStmt, loserUpdatedScore, loserScore.AthleteId, loserScore.StyleId, outcomeId)
 	if err != nil {
 		log.Println("Update winner athlete score failed.")
 		return
