@@ -128,9 +128,7 @@ func UpdateAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	sqlStatement := `UPDATE athlete SET first_name = $2, last_name = $3, username = $4, birth_date = $5, email = $6, password = $7 WHERE athlete_id = $8`
-	_, err = dbconn.Queryx(sqlStatement, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Email, athlete.Password, athlete.AthleteId)
+	_, err = repo.UpdateAthlete(athlete)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -146,8 +144,7 @@ func DeleteAthlete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 
-	sqlStatement := `DELETE FROM athlete WHERE athlete_id = $1`
-	_, err := dbconn.Queryx(sqlStatement, id)
+	_, err := repo.DeleteAthlete(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -163,21 +160,13 @@ func GetAthleteRecord(w http.ResponseWriter, r *http.Request) {
 	var record models.AthleteRecord
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	sqlStmt := `SELECT * FROM athlete_record where athlete_id = $1`
-	row, err := dbconn.Queryx(sqlStmt, id)
+	record, err := repo.GetAthleteRecord(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	} else {
-		for row.Next() {
-			err2 := row.StructScan(&record)
-			if err2 != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}
-		json.NewEncoder(w).Encode(&record)
 	}
+
+	json.NewEncoder(w).Encode(&record)
 }
 
 func FollowAthlete(w http.ResponseWriter, r *http.Request) {
@@ -188,8 +177,7 @@ func FollowAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	sqlStatement := `INSERT INTO following (follower_id, followed_id) VALUES ($1, $2)`
-	_, err = dbconn.Queryx(sqlStatement, follow.FollowerId, follow.FollowedId)
+	_, err = repo.FollowAthlete(follow)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -213,12 +201,14 @@ func UnfollowAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid followedId", http.StatusBadRequest)
 		return
 	}
-	sqlStatement := `DELETE FROM following WHERE follower_id = $1 AND followed_id = $2`
-	_, err = dbconn.Exec(sqlStatement, followerId, followedId)
+	_, err = repo.UnfollowAthlete(followerId, followedId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Athlete unfollowed successfully")
 }
 
 func GetAthletesFollowed(w http.ResponseWriter, r *http.Request) {
@@ -226,25 +216,13 @@ func GetAthletesFollowed(w http.ResponseWriter, r *http.Request) {
 	var follows []int
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	var tempFollow = models.GetFollow()
-	sqlStmt := `SELECT * FROM following where follower_id = $1`
-	rows, err := dbconn.Queryx(sqlStmt, id)
+	follows, err := repo.GetAthletesFollowed(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		err2 := rows.StructScan(&tempFollow)
-		if err2 != nil {
-			http.Error(w, err2.Error(), http.StatusBadRequest)
-			return
-		}
-		follows = append(follows, tempFollow.FollowedId)
-	}
-
-	json.NewEncoder(w).Encode(follows)
+	json.NewEncoder(w).Encode(&follows)
 }
 
 func SetDB(db *sqlx.DB) {
