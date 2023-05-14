@@ -1,7 +1,6 @@
 package services
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,12 +9,20 @@ import (
 
 	"strconv"
 
+	"ronin/repositories"
+
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	// "github.com/google/uuid"
 )
 
 var dbconn *sqlx.DB
+
+var repo *repositories.AthleteRepository
+
+func SetRepo(r *repositories.AthleteRepository) {
+	repo = r
+}
 
 type AthleteUsername struct {
 	Username string `json:"username" db:"username"`
@@ -28,89 +35,41 @@ type AthleteId struct {
 func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	sqlStmt := `SELECT username FROM athlete`
-	rows, err := dbconn.Queryx(sqlStmt)
-
-	if err == nil {
-		var usernames []string
-		var tempUsername AthleteUsername
-
-		for rows.Next() {
-			err = rows.StructScan(&tempUsername)
-			usernames = append(usernames, tempUsername.Username)
-		}
-
-		switch err {
-		case sql.ErrNoRows:
-			{
-				log.Println("no rows returns.")
-				http.Error(w, err.Error(), http.StatusNoContent)
-			}
-		case nil:
-			json.NewEncoder(w).Encode(&usernames)
-		default:
-			http.Error(w, err.Error(), 400)
-			return
-		}
-	} else {
+	usernames, err := repo.GetAllUsernames()
+	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), 400)
 		return
 	}
+
+	json.NewEncoder(w).Encode(&usernames)
 }
 
 func GetAllAthletes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var athletes = models.GetAthletes()
-
-	sqlStmt := `SELECT * FROM athlete`
-	rows, err := dbconn.Queryx(sqlStmt)
-
-	if err == nil {
-		var tempAthlete = models.GetAthlete()
-
-		for rows.Next() {
-			err = rows.StructScan(&tempAthlete)
-			athletes = append(athletes, tempAthlete)
-		}
-
-		switch err {
-		case sql.ErrNoRows:
-			{
-				log.Println("no rows returns.")
-				http.Error(w, err.Error(), http.StatusNoContent)
-			}
-		case nil:
-			json.NewEncoder(w).Encode(&athletes)
-		default:
-			http.Error(w, err.Error(), 400)
-			return
-		}
-	} else {
+	athletes, err := repo.GetAllAthletes
+	if err != nil {
+		log.Println(err.Error())
 		http.Error(w, err.Error(), 400)
 		return
 	}
+
+	json.NewEncoder(w).Encode(&athletes)
 }
 
 func GetAthlete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var athletes = models.GetAthletes()
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	var tempAthlete = models.GetAthlete()
-	sqlStmt := `SELECT * FROM athlete where athlete_id = $1`
-	rows, err := dbconn.Queryx(sqlStmt, id)
-	for rows.Next() {
-		err2 := rows.StructScan(&tempAthlete)
-		athletes = append(athletes, tempAthlete)
-		if err2 != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-
-		}
-		json.NewEncoder(w).Encode(&athletes)
+	athlete, err := repo.GetAthleteById(id)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), 400)
+		return
 	}
+
+	json.NewEncoder(w).Encode(&athlete)
 }
 
 func GetAthleteByUsername(w http.ResponseWriter, r *http.Request) {
@@ -118,19 +77,14 @@ func GetAthleteByUsername(w http.ResponseWriter, r *http.Request) {
 	var athletes = models.GetAthletes()
 	vars := mux.Vars(r)
 	username := vars["username"]
-	var tempAthlete = models.GetAthlete()
-	sqlStmt := `SELECT * FROM athlete where username = $1`
-	rows, err := dbconn.Queryx(sqlStmt, username)
-	for rows.Next() {
-		err2 := rows.StructScan(&tempAthlete)
-		athletes = append(athletes, tempAthlete)
-		if err2 != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-
-		}
-		json.NewEncoder(w).Encode(&athletes)
+	athletes, err := repo.GetAthleteByUsername(username)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), 400)
+		return
 	}
+
+	json.NewEncoder(w).Encode(&athletes)
 }
 
 func IsAuthorizedUser(w http.ResponseWriter, r *http.Request) {
@@ -140,67 +94,30 @@ func IsAuthorizedUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var athleteId int
-	sqlStmt := `SELECT count(*) FROM athlete where username = $1 and password = $2`
-	err = dbconn.QueryRow(sqlStmt, athlete.Username, athlete.Password).Scan(&athleteId)
+	isAuthorized, returnedAthlete, err := repo.IsAuthorizedUser(athlete)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if athleteId == 1 {
-		var tempAthlete = models.GetAthlete()
-		sqlStmt := `SELECT * FROM athlete where username = $1`
-		rows, err := dbconn.Queryx(sqlStmt, athlete.Username)
-		for rows.Next() {
-			err2 := rows.StructScan(&tempAthlete)
-			if err2 != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-
-			}
-			idObj := AthleteId{AthleteId: tempAthlete.AthleteId}
-			json.NewEncoder(w).Encode(&idObj)
-		}
-	} else {
-		json.NewEncoder(w).Encode(false)
-	}
+	json.NewEncoder(w).Encode(&isAuthorized)
 }
 
 func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var athlete models.Athlete
 	err := json.NewDecoder(r.Body).Decode(&athlete)
-	var athleteId int
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	sqlStatement := `INSERT INTO athlete (first_name, last_name, username, birth_date, email, password)
-		VALUES ($1, $2, $3, $4, $5, $6) RETURNING athlete_id`
-	rows, err := dbconn.Queryx(sqlStatement, athlete.FirstName, athlete.LastName, athlete.Username, athlete.BirthDate, athlete.Email, athlete.Password)
+	athleteId, err := repo.CreateAthlete(athlete)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	} else {
-		for rows.Next() {
-			err = rows.Scan(&athleteId)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			sqlStmt := `INSERT INTO athlete_record (athlete_id, wins, losses, draws) VALUES ($1, 0, 0, 0)`
-			_, err = dbconn.Queryx(sqlStmt, athleteId)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			// Create AthleteId instance and encode it as JSON
-			idObj := AthleteId{AthleteId: athleteId}
-			json.NewEncoder(w).Encode(idObj)
-		}
 	}
+
+	json.NewEncoder(w).Encode(&athleteId)
 }
 
 func UpdateAthlete(w http.ResponseWriter, r *http.Request) {
