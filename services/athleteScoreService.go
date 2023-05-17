@@ -13,6 +13,22 @@ import (
 
 const K float64 = 32
 
+// type AthleteScoreRepository struct {
+// 	dbconn *sqlx.DB
+// }
+
+// func NewAthleteRepository(db *sqlx.DB) *AthleteScoreRepository {
+// 	return &AthleteScoreRepository{
+// 		dbconn: db,
+// 	}
+// }
+
+// var athleteScoreRepo *repositories.AthleteScoreRepository
+
+// func SetAthleteScoreRepo(r *repositories.AthleteScoreRepository) {
+// 	athleteScoreRepo = r
+// }
+
 type AthleteScoreService struct{}
 
 type AthleteStyleScore struct {

@@ -10,6 +10,10 @@ type AthleteRepository struct {
 	db *sqlx.DB
 }
 
+type AthleteUsername struct {
+	Username string `json:"username" db:"username"`
+}
+
 func NewAthleteRepository(db *sqlx.DB) *AthleteRepository {
 	return &AthleteRepository{
 		db: db,

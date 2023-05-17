@@ -8,8 +8,13 @@ import (
 	"ronin/repositories"
 
 	"github.com/gorilla/mux"
-	// "github.com/jmoiron/sqlx"
 )
+
+var feedRepo *repositories.FeedRepository
+
+func SetFeedRepo(r *repositories.FeedRepository) {
+	feedRepo = r
+}
 
 func GetFeedByAthleteId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -17,8 +22,7 @@ func GetFeedByAthleteId(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 
-	repo := repositories.NewFeedRepository(dbconn)
-	feed, err := repo.GetFeedByAthleteId(id)
+	feed, err := feedRepo.GetFeedByAthleteId(id)
 
 	switch err {
 	case sql.ErrNoRows:

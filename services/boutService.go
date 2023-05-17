@@ -8,8 +8,11 @@ import (
 	"ronin/models"
 
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	// "github.com/jmoiron/sqlx"
 )
+
+var dbconn *sqlx.DB
 
 func GetAllBouts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

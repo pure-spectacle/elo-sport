@@ -13,15 +13,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
-	// "github.com/google/uuid"
 )
 
-var dbconn *sqlx.DB
+var athleteRepo *repositories.AthleteRepository
 
-var repo *repositories.AthleteRepository
-
-func SetRepo(r *repositories.AthleteRepository) {
-	repo = r
+func SetAthleteRepo(r *repositories.AthleteRepository) {
+	athleteRepo = r
 }
 
 type AthleteUsername struct {
@@ -35,7 +32,7 @@ type AthleteId struct {
 func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	usernames, err := repo.GetAllUsernames()
+	usernames, err := athleteRepo.GetAllUsernames()
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), 400)
@@ -48,7 +45,7 @@ func GetAllAthleteUsernames(w http.ResponseWriter, r *http.Request) {
 func GetAllAthletes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	athletes, err := repo.GetAllAthletes
+	athletes, err := athleteRepo.GetAllAthletes()
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), 400)
@@ -62,22 +59,7 @@ func GetAthlete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	athlete, err := repo.GetAthleteById(id)
-	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, err.Error(), 400)
-		return
-	}
-
-	json.NewEncoder(w).Encode(&athlete)
-}
-
-func GetAthleteByUsername(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var athletes = models.GetAthletes()
-	vars := mux.Vars(r)
-	username := vars["username"]
-	athletes, err := repo.GetAthleteByUsername(username)
+	athletes, err := athleteRepo.GetAthleteById(id)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), 400)
@@ -87,6 +69,20 @@ func GetAthleteByUsername(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&athletes)
 }
 
+func GetAthleteByUsername(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	username := vars["username"]
+	athlete, err := athleteRepo.GetAthleteByUsername(username)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	json.NewEncoder(w).Encode(&athlete)
+}
+
 func IsAuthorizedUser(w http.ResponseWriter, r *http.Request) {
 	var athlete models.Athlete
 	err := json.NewDecoder(r.Body).Decode(&athlete)
@@ -94,10 +90,16 @@ func IsAuthorizedUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	isAuthorized, returnedAthlete, err := repo.IsAuthorizedUser(athlete)
+	isAuthorized, returnedAthlete, err := athleteRepo.IsAuthorizedUser(athlete)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	} else if !isAuthorized {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	} else {
+		idObj := AthleteId{AthleteId: returnedAthlete.AthleteId}
+		json.NewEncoder(w).Encode(&idObj)
 	}
 
 	json.NewEncoder(w).Encode(&isAuthorized)
@@ -111,7 +113,7 @@ func CreateAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	athleteId, err := repo.CreateAthlete(athlete)
+	athleteId, err := athleteRepo.CreateAthlete(athlete)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -128,7 +130,7 @@ func UpdateAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	_, err = repo.UpdateAthlete(athlete)
+	err = athleteRepo.UpdateAthlete(athlete)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -144,7 +146,7 @@ func DeleteAthlete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
 
-	_, err := repo.DeleteAthlete(id)
+	err := athleteRepo.DeleteAthlete(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -160,7 +162,7 @@ func GetAthleteRecord(w http.ResponseWriter, r *http.Request) {
 	var record models.AthleteRecord
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	record, err := repo.GetAthleteRecord(id)
+	record, err := athleteRepo.GetAthleteRecord(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -177,7 +179,7 @@ func FollowAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	_, err = repo.FollowAthlete(follow)
+	err = athleteRepo.FollowAthlete(follow)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -201,7 +203,7 @@ func UnfollowAthlete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid followedId", http.StatusBadRequest)
 		return
 	}
-	_, err = repo.UnfollowAthlete(followerId, followedId)
+	err = athleteRepo.UnfollowAthlete(followerId, followedId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -216,7 +218,7 @@ func GetAthletesFollowed(w http.ResponseWriter, r *http.Request) {
 	var follows []int
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	follows, err := repo.GetAthletesFollowed(id)
+	follows, err := athleteRepo.GetAthletesFollowed(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
