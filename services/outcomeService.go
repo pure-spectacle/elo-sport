@@ -7,9 +7,16 @@ import (
 	"log"
 	"net/http"
 	"ronin/models"
+	"ronin/repositories"
 
 	"github.com/gorilla/mux"
 )
+
+var outcomeRepo *repositories.OutcomeRepository
+
+func SetOutcomeRepo(r *repositories.OutcomeRepository) {
+	outcomeRepo = r
+}
 
 type OutcomeService struct {
 	athleteScoreService *AthleteScoreService

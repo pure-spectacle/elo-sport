@@ -7,9 +7,16 @@ import (
 	"log"
 	"net/http"
 	"ronin/models"
+	"ronin/repositories"
 
 	"github.com/gorilla/mux"
 )
+
+var styleRepo *repositories.StyleRepository
+
+func SetStyleRepo(r *repositories.StyleRepository) {
+	styleRepo = r
+}
 
 type StyleService struct {
 	athleteScoreService *AthleteScoreService

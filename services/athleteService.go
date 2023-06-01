@@ -12,7 +12,6 @@ import (
 	"ronin/repositories"
 
 	"github.com/gorilla/mux"
-	"github.com/jmoiron/sqlx"
 )
 
 var athleteRepo *repositories.AthleteRepository
@@ -225,8 +224,4 @@ func GetAthletesFollowed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(&follows)
-}
-
-func SetDB(db *sqlx.DB) {
-	dbconn = db
 }

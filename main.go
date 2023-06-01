@@ -18,9 +18,17 @@ func main() {
 
 	athleteRepo := repositories.NewAthleteRepository(dbconn)
 	feedRepo := repositories.NewFeedRepository(dbconn)
+	styleRepo := repositories.NewStyleRepository(dbconn)
+	boutRepo := repositories.NewBoutRepository(dbconn)
+	outcomeRepo := repositories.NewOutcomeRepository(dbconn)
+	athleteScoreRepo := repositories.NewAthleteScoreRepository(dbconn)
 
 	services.SetAthleteRepo(athleteRepo)
 	services.SetFeedRepo(feedRepo)
+	services.SetStyleRepo(styleRepo)
+	services.SetBoutRepo(boutRepo)
+	services.SetOutcomeRepo(outcomeRepo)
+	services.SetAthleteRepo(athleteScoreRepo)
 
 	var appRouter = router.CreateRouter()
 

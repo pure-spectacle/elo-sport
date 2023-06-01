@@ -7,9 +7,16 @@ import (
 	"math"
 	"net/http"
 	"ronin/models"
+	"ronin/repositories"
 
 	"github.com/gorilla/mux"
 )
+
+var athleteScoreRepo *repositories.AthleteScoreRepository
+
+func SetAthleteScoreRepo(r *repositories.AthleteScoreRepository) {
+	athleteScoreRepo = r
+}
 
 const K float64 = 32
 
