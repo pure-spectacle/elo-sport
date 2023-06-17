@@ -95,7 +95,7 @@ func (a *AthleteScoreService) GetAthleteScoreById(athleteId, styleId int) (model
 
 }
 
-func CreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool, outcomeId int) {
+func (a *AthleteScoreService) CreateAthleteScore(winnerScore, loserScore models.AthleteScore, isDraw bool, outcomeId int) {
 	winnerUpdatedScore, loserUpdatedScore := CalculateScore(winnerScore, loserScore, isDraw)
 
 	err := athleteScoreRepo.UpdateAthleteScore(int(winnerUpdatedScore), winnerScore.AthleteId, winnerScore.StyleId, outcomeId)

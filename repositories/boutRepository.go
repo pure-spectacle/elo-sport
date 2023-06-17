@@ -133,6 +133,15 @@ func (repo *BoutRepository) DeclineBout(id string) error {
 	return nil
 }
 
+func (repo *BoutRepository) CompleteBoutByBoutId(boutId string) error {
+	sqlStmt := `UPDATE bout SET completed = true WHERE bout_id = $1`
+	_, err := repo.DB.Exec(sqlStmt, boutId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (repo *BoutRepository) CompleteBout(boutId, refereeId string) error {
 	sqlStmt := `UPDATE bout SET completed = true WHERE bout_id = $1 and referee_id = $2`
 	_, err := repo.DB.Exec(sqlStmt, boutId, refereeId)
