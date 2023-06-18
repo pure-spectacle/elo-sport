@@ -46,8 +46,8 @@ func (repo *BoutRepository) GetBoutById(id string) (models.Bout, error) {
 }
 
 func (repo *BoutRepository) CreateBout(bout models.Bout) (int, error) {
-	sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, referee_id, style_id, accepted, completed, deleted, cancelled, points, created_dt, updated_dt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) RETURNING bout_id`
-	err := repo.DB.QueryRowx(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.StyleId, bout.Accepted, bout.Completed, bout.Deleted, bout.Cancelled, bout.Points).Scan(&bout.BoutId)
+	sqlStmt := `INSERT INTO bout (challenger_id, acceptor_id, referee_id, style_id, accepted, completed, cancelled, points) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING bout_id`
+	err := repo.DB.QueryRowx(sqlStmt, bout.ChallengerId, bout.AcceptorId, bout.RefereeId, bout.StyleId, bout.Accepted, bout.Completed, bout.Cancelled, bout.Points).Scan(&bout.BoutId)
 	if err != nil {
 		return 0, err
 	}

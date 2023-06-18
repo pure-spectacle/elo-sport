@@ -96,8 +96,8 @@ func (repo *AthleteRepository) IsAuthorizedUser(athlete models.Athlete) (bool, m
 
 	if athleteId == 1 {
 		var tempAthlete models.Athlete
-		sqlStmt := `SELECT * FROM athlete where username = $1`
-		err := repo.db.Get(&tempAthlete, sqlStmt, athlete.Username)
+		sqlStmt := `SELECT * FROM athlete where username = $1 and password = $2`
+		err := repo.db.Get(&tempAthlete, sqlStmt, athlete.Username, athlete.Password)
 		if err != nil {
 			return true, models.Athlete{}, err
 		}

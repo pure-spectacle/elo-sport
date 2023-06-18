@@ -96,12 +96,12 @@ func IsAuthorizedUser(w http.ResponseWriter, r *http.Request) {
 	} else if !isAuthorized {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
-	} else {
+	} else if isAuthorized {
 		idObj := AthleteId{AthleteId: returnedAthlete.AthleteId}
 		json.NewEncoder(w).Encode(&idObj)
+	} else {
+		json.NewEncoder(w).Encode(false)
 	}
-
-	json.NewEncoder(w).Encode(&isAuthorized)
 }
 
 func CreateAthlete(w http.ResponseWriter, r *http.Request) {
