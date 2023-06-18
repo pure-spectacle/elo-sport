@@ -28,7 +28,7 @@ func main() {
 	services.SetStyleRepo(styleRepo)
 	services.SetBoutRepo(boutRepo)
 	services.SetOutcomeRepo(outcomeRepo)
-	services.SetAthleteRepo(athleteScoreRepo)
+	services.SetAthleteScoreRepo(athleteScoreRepo)
 
 	var appRouter = router.CreateRouter()
 

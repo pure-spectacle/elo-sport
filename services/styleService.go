@@ -1,13 +1,12 @@
 package services
 
 import (
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"ronin/models"
 	"ronin/repositories"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -26,40 +25,15 @@ func NewStyleService(athleteScoreService *AthleteScoreService) *StyleService {
 	return &StyleService{athleteScoreService: athleteScoreService}
 }
 
-type RegisterStylesRequest struct {
-	AthleteID int   `json:"athleteId"`
-	Styles    []int `json:"styles"`
-}
-
 func GetAllStyles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var styles = models.GetStyles()
-
-	sqlStmt := `SELECT * FROM style`
-	rows, err := dbconn.Queryx(sqlStmt)
-
+	styles, err := styleRepo.GetAllStyles()
 	if err == nil {
-		var tempStyle = models.GetStyle()
-
-		for rows.Next() {
-			err = rows.StructScan(&tempStyle)
-			styles = append(styles, tempStyle)
-		}
-
-		switch err {
-		case sql.ErrNoRows:
-			{
-				log.Println("no rows returns.")
-				http.Error(w, err.Error(), 204)
-			}
-		case nil:
-			json.NewEncoder(w).Encode(&styles)
-		default:
-			http.Error(w, err.Error(), 400)
-			return
-		}
+		json.NewEncoder(w).Encode(&styles)
 	} else {
+		log.Println(err.Error())
 		http.Error(w, err.Error(), 400)
 		return
 	}
@@ -69,8 +43,7 @@ func CreateStyle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var style = models.GetStyle()
 	_ = json.NewDecoder(r.Body).Decode(&style)
-	sqlStmt := `INSERT INTO style (style_name) VALUES ($1) RETURNING style_id`
-	err := dbconn.QueryRowx(sqlStmt, style.StyleName).StructScan(&style)
+	err := styleRepo.CreateStyle(style)
 	if err == nil {
 		json.NewEncoder(w).Encode(&style)
 	} else {
@@ -84,17 +57,19 @@ func (s *StyleService) RegisterAthleteToStyle(w http.ResponseWriter, r *http.Req
 	var style = models.GetStyle()
 	vars := mux.Vars(r)
 	id := vars["athlete_id"]
-	_ = json.NewDecoder(r.Body).Decode(&style)
-	sqlStmt := `INSERT INTO athlete_style (style_id, athlete_id) VALUES ($1, $2) RETURNING style_id`
-	err := dbconn.QueryRowx(sqlStmt, style.StyleId, id).StructScan(&style)
-	//call athleteScoreService.go to create the athlete's score to be equal to 400
-	intValue := 0
-	_, errInt := fmt.Sscan(id, &intValue)
-	if errInt != nil {
+	intAthleteId, err := strconv.Atoi(id)
+	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	createErr := s.athleteScoreService.CreateAthleteScoreUponRegistration(intValue, style.StyleId)
+	_ = json.NewDecoder(r.Body).Decode(&style)
+	err = styleRepo.RegisterAthleteToStyle(intAthleteId, style.StyleId)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	//call athleteScoreService.go to create the athlete's score to be equal to 400
+	createErr := s.athleteScoreService.CreateAthleteScoreUponRegistration(intAthleteId, style.StyleId)
 	if createErr == nil {
 		json.NewEncoder(w).Encode(&style)
 	} else {
@@ -106,7 +81,7 @@ func (s *StyleService) RegisterAthleteToStyle(w http.ResponseWriter, r *http.Req
 func (s *StyleService) RegisterMultipleStylesToAthlete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var request RegisterStylesRequest
+	var request models.RegisterStylesRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -117,59 +92,33 @@ func (s *StyleService) RegisterMultipleStylesToAthlete(w http.ResponseWriter, r 
 	styles := request.Styles
 
 	for _, style := range styles {
-		var returnedStyleID int
-		sqlStmt := `INSERT INTO athlete_style (style_id, athlete_id) VALUES ($1, $2) RETURNING style_id`
-		err := dbconn.QueryRowx(sqlStmt, style, athleteID).Scan(&returnedStyleID)
+		err := styleRepo.RegisterAthleteToStyle(athleteID, style)
 		if err == nil {
 			createErr := s.athleteScoreService.CreateAthleteScoreUponRegistration(athleteID, style)
 			if createErr != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			json.NewEncoder(w).Encode(&returnedStyleID)
+
 		} else {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
+
 }
 
 func GetCommonStyles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
 	vars := mux.Vars(r)
 	acceptorId := vars["athlete_id"]
 	challengerId := vars["challenger_id"]
 
 	var styles = models.GetStyles()
 
-	sqlStmt := `SELECT s.style_id, s.style_name
-	FROM style AS s
-	JOIN athlete_style AS as1 ON s.style_id = as1.style_id
-	JOIN athlete_style AS as2 ON s.style_id = as2.style_id
-	WHERE as1.athlete_id=$1 and as2.athlete_id=$2`
-	rows, err := dbconn.Queryx(sqlStmt, acceptorId, challengerId)
-
+	styles, err := styleRepo.GetCommonStyles(acceptorId, challengerId)
 	if err == nil {
-		var tempStyle = models.GetStyle()
-
-		for rows.Next() {
-			err = rows.StructScan(&tempStyle)
-			styles = append(styles, tempStyle)
-		}
-
-		switch err {
-		case sql.ErrNoRows:
-			{
-				log.Println("no rows returns.")
-				http.Error(w, err.Error(), 204)
-			}
-		case nil:
-			json.NewEncoder(w).Encode(&styles)
-		default:
-			http.Error(w, err.Error(), 400)
-			return
-		}
+		json.NewEncoder(w).Encode(&styles)
 	} else {
 		http.Error(w, err.Error(), 400)
 		return
