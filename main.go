@@ -30,6 +30,11 @@ func main() {
 	services.SetOutcomeRepo(outcomeRepo)
 	services.SetAthleteScoreRepo(athleteScoreRepo)
 
+	athleteScoreService := services.NewAthleteScoreService()
+	outcomeService := services.NewOutcomeService(athleteScoreService, boutRepo)
+
+	router.SetOutcomeService(outcomeService)
+
 	var appRouter = router.CreateRouter()
 
 	log.Println("listening on Port 8000")

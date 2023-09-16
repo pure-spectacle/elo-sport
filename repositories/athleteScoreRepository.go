@@ -105,7 +105,7 @@ func (repo *AthleteScoreRepository) GetAthleteScoreByStyle(id int, style int) (m
 
 func (repo *AthleteScoreRepository) UpdateAthleteScore(score int, athleteId int, styleId int, outcomeId int) error {
 	sqlStmt := `INSERT INTO athlete_score (score, athlete_id, style_id, outcome_id) VALUES ($1, $2, $3, $4)`
-	_, err := repo.DB.Exec(sqlStmt, athleteId, styleId, score, outcomeId)
+	_, err := repo.DB.Exec(sqlStmt, score, athleteId, styleId, outcomeId)
 	if err != nil {
 		return err
 	}

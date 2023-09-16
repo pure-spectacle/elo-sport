@@ -7,6 +7,11 @@ import (
 )
 
 const base_url = "/api/v1"
+var outcomeService *services.OutcomeService
+
+func SetOutcomeService(s *services.OutcomeService) {
+	outcomeService = s
+}
 
 func CreateRouter() *mux.Router {
 	router := mux.NewRouter()

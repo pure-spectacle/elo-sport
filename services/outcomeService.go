@@ -22,8 +22,11 @@ type OutcomeService struct {
 	boutRepository      *repositories.BoutRepository
 }
 
-func NewOutcomeService(athleteScoreService *AthleteScoreService) *OutcomeService {
-	return &OutcomeService{athleteScoreService: athleteScoreService}
+func NewOutcomeService(athleteScoreService *AthleteScoreService, boutRepo *repositories.BoutRepository) *OutcomeService {
+	return &OutcomeService{
+		athleteScoreService: athleteScoreService,
+		boutRepository:      boutRepo,
+	}
 }
 
 func GetAllOutcomes(w http.ResponseWriter, r *http.Request) {
@@ -125,10 +128,12 @@ func (o *OutcomeService) insertOutcomeAndUpdateAthleteScores(outcome *models.Out
 		}
 	}
 
-	err := o.boutRepository.CompleteBoutByBoutId(boutId)
-	if err != nil {
-		return err
-	}
+	//
+
+	// err := o.boutRepository.CompleteBoutByBoutId(boutId)
+	// if err != nil {
+	// 	return err
+	// }
 
 	loserScore, loserErr := o.athleteScoreService.GetAthleteScoreById(outcome.LoserId, outcome.StyleId)
 	winnerScore, winnerErr := o.athleteScoreService.GetAthleteScoreById(outcome.WinnerId, outcome.StyleId)

@@ -17,6 +17,10 @@ func SetAthleteScoreRepo(r *repositories.AthleteScoreRepository) {
 	athleteScoreRepo = r
 }
 
+func NewAthleteScoreService() *AthleteScoreService {
+	return &AthleteScoreService{}
+}
+
 const K float64 = 32
 
 type AthleteScoreService struct{}
