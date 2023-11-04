@@ -21,7 +21,7 @@ func NewAthleteScoreService() *AthleteScoreService {
 	return &AthleteScoreService{}
 }
 
-const K float64 = 32
+const L float64 = 32
 
 type AthleteScoreService struct{}
 
@@ -137,8 +137,8 @@ func CalculateScore(winnerScore, loserScore models.AthleteScore, isDraw bool) (f
 		outcome2 = 0
 	}
 
-	updatedScore1 := winnerScore.Score + K*(outcome1-expectedOutcome1)
-	updatedScore2 := loserScore.Score + K*(outcome2-expectedOutcome2)
+	updatedScore1 := winnerScore.Score + L*(outcome1-expectedOutcome1)
+	updatedScore2 := loserScore.Score + L*(outcome2-expectedOutcome2)
 
 	return math.Round(updatedScore1), math.Round(updatedScore2)
 }
