@@ -30,7 +30,8 @@ func main() {
 	services.SetOutcomeRepo(outcomeRepo)
 	services.SetAthleteScoreRepo(athleteScoreRepo)
 
-	outcomeService := services.NewOutcomeService(athleteScoreRepo, boutRepo)
+	athleteScoreService := services.NewAthleteScoreService()
+	outcomeService := services.NewOutcomeService(athleteScoreService, boutRepo)
 
 	router.SetOutcomeService(outcomeService)
 

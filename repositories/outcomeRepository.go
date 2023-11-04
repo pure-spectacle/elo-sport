@@ -96,10 +96,3 @@ func (repo *OutcomeRepository) CreateOutcomeByBoutIdDraw(outcome *models.Outcome
 	}
 	return nil
 }
-
-func (repo *OutcomeRepository) DoesOutcomeExistByBoutId(boutId string) (bool, error) {
-	var exists bool
-	sqlStmt := `SELECT EXISTS(SELECT 1 FROM outcome WHERE bout_id = $1)`
-	err := repo.DB.QueryRowx(sqlStmt, boutId).Scan(&exists)
-	return exists, err
-}

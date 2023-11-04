@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	// "log"
 	"ronin/models"
 
 	"github.com/jmoiron/sqlx"
@@ -108,7 +107,6 @@ func (repo *BoutRepository) UpdateBout(id string, bout models.Bout) error {
 }
 
 func (repo *BoutRepository) DeleteBout(id string) error {
-	// log.Printf("BoutRepository DB: %v\n", repo.DB)
 	sqlStmt := `DELETE FROM bout WHERE bout_id = $1`
 	_, err := repo.DB.Exec(sqlStmt, id)
 	if err != nil {
