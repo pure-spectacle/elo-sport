@@ -2,7 +2,8 @@ package repositories
 
 import (
 	"ronin/models"
-
+	"fmt"
+	
 	"github.com/jmoiron/sqlx"
 )
 
@@ -133,8 +134,7 @@ func (repo *AthleteRepository) UpdateAthlete(athlete models.Athlete) error {
 }
 
 func (repo *AthleteRepository) DeleteAthlete(id string) error {
-	sqlStmt := `DELETE FROM athlete WHERE athlete_id = $1`
-	_, err := repo.db.Exec(sqlStmt, id)
+	_, err := repo.db.Query(fmt.Sprintf("DELETE FROM athlete WHERE athlete_id = %s", id))
 	return err
 }
 
