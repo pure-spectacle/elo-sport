@@ -23,8 +23,8 @@ func GetConnection() *sqlx.DB {
 	
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		"postgres", 5432, 
-		"chetbackiewicz", "i90jsadfp9030jf!!", 
+		"postgres", 5433, 
+		"chetbackiewicz", "i90jsadfp9030jf!23423!", 
 		"elo_sport")
 
 	db, err := sqlx.Open("postgres", psqlInfo)
