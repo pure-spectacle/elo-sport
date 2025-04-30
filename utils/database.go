@@ -18,12 +18,14 @@ func GetConnection() *sqlx.DB {
 	if err != nil {
 		log.Fatalf("Error loading port from .env file")
 	  }
+
+	psqlInfo := fmt.Sprintf("
 	
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		goDotEnvVariable("DB_HOST"), port, 
-		goDotEnvVariable("DB_USER"), goDotEnvVariable("DB_PASSWORD"), 
-		goDotEnvVariable("DB_NAME"))
+		"postgres", 5432, 
+		"chetbackiewicz", "i90jsadfp9030jf!!", 
+		"elo_sport")
 
 	db, err := sqlx.Open("postgres", psqlInfo)
 	if err != nil {
