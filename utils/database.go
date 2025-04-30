@@ -19,7 +19,7 @@ func GetConnection() *sqlx.DB {
 		log.Fatalf("Error loading port from .env file")
 	  }
 
-	psqlInfo := fmt.Sprintf("
+	
 	
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
