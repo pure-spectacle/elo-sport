@@ -1,2 +1,4 @@
 .env
 __debug_bin
+
+#Add additional files or directories to ignore below
