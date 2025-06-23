@@ -27,7 +27,7 @@ jobs:
           - language: actions
             build-mode: none
           - language: go
-            build-mode: autobuild
+            build-mode: manual
 
     steps:
       - name: Checkout repository
